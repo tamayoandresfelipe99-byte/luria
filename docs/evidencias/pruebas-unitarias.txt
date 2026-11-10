@@ -1,0 +1,38 @@
+✔ A01 — registro sin pago no concede acceso (0.896386ms)
+✔ A02 — rechazar marketing no bloquea registro ni compra (1.299582ms)
+✔ A03 — pago aprobado registra una única vigencia (17.596034ms)
+✔ A04 — manipular precio desde el navegador no altera el pago (1.023449ms)
+✔ A05 — webhook duplicado no duplica suscripción, licencia ni comisión (0.52575ms)
+✔ A06 — evento con firma falsa se rechaza (0.434915ms)
+✔ A07 — eventos fuera de orden mantienen consistencia (0.48391ms)
+✔ A08 — pago pendiente o rechazado no habilita uso (2.283806ms)
+✔ A09 — pago aprobado con fallo de licencia genera tarea auditable (0.666582ms)
+✔ A11 — período vencido: sin acceso (0.341409ms)
+✔ A12 — cancelar renovaciones futuras mantiene acceso hasta el fin del período (0.128437ms)
+✔ A13 — renovación: sin duplicar vigencias y sin perder días (0.458337ms)
+✔ A14 — reembolso o reversión revoca y registra el ajuste (0.398574ms)
+✔ A15 — entorno no verificado no permite compra (0.076442ms)
+✔ A16 — recuperación no revela si un correo existe (2.109313ms)
+✔ A18 — retirar consentimiento comercial detiene promociones (0.128109ms)
+✔ A19 — el código cliente no contiene secretos ni variables de servidor (9.860573ms)
+✔ A20 — producción no admite simulaciones y cobros reales exigen condiciones (0.67077ms)
+✔ A21 — fechas y vencimientos mensuales en hora de Colombia (1.272394ms)
+✔ A22 — licencia sin conexión no se extiende más allá de lo pagado (4.433904ms)
+✔ Soporte — no acepta contraseñas en la descripción (0.559886ms)
+✔ A15 — clasificación de elegibilidad (1.833478ms)
+✔ F01 — Vigía de calificación: descripción íntegra y estado correcto (1.350657ms)
+✔ F02 — Paquete de evidencias para certificación: descripción íntegra y estado correcto (0.128808ms)
+✔ F03 — Informe de matriz de evidencias: descripción íntegra y estado correcto (0.131834ms)
+✔ F04 — Gestor de fechas: descripción íntegra y estado correcto (0.083632ms)
+✔ F05 — Juicios evaluativos: descripción íntegra y estado correcto (0.171617ms)
+✔ F06 — Reenvíos: descripción íntegra y estado correcto (0.07845ms)
+✔ F03 — no inventa formatos de exportación de la matriz (0.178099ms)
+✔ Exactamente seis módulos (0.061976ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 384.19252

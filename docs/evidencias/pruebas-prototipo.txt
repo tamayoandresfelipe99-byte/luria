@@ -1,0 +1,26 @@
+✔ Inicio muestra 6 funciones
+✔ Aviso de independencia visible
+✔ F01–F06 con estado 'Declarada'
+✔ A01/compra exige sesión
+✔ Registro valida contraseña y aceptación
+✔ A01 registro sin pago → sin suscripción
+✔ A15 entorno no verificado no permite comprar
+✔ A17 celular → no compatible
+✔ Compatibilidad verificada habilita confirmación
+✔ Pasarela simulada abierta
+✔ A06 firma falsa rechazada
+✔ A09 pago aprobado + licencia pendiente → activación pendiente
+✔ A05 duplicado ignorado
+✔ Reintento activa la licencia
+✔ A21 vencimiento 10 dic 2026 hora de Colombia  [10 de dic de 2026, 11:59 p. m. (hora de Colombia)]
+✔ A12 cancelación conserva acceso
+✔ A11 tras el vencimiento → vencida
+✔ Pago manual exige evidencia
+✔ Sin errores de JavaScript (escritorio)
+✔ A17 móvil: requisito de escritorio visible antes de pagar
+✔ A17 móvil: sin desplazamiento horizontal  [overflow=0]
+✔ A17 móvil: menú desplegable accesible
+✔ Sin errores de JavaScript (móvil)
+✔ Controles con etiqueta (vista admin)
+
+24/24 comprobaciones superadas

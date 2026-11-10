@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LURIA prototipo navegable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Estilos compartidos con la aplicación (src/app/globals.css), inyectados por scripts/build-prototype.ts */
+/*__CSS__*/
+/* Plan: una sola paleta clara de marca (azul profundo + turquesa); prototipo de una página con rutas por #hash. */
+:root { --font-sans: "Manrope"; color-scheme: light; }
+body { background: var(--bg); }
+h1, h2 { text-wrap: balance; }
+td, .kpi .v, .price { font-variant-numeric: tabular-nums; }
+.proto-banner { background: #3b0764; color: #fff; font-size: 0.85rem; font-weight: 600; padding: 7px 16px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; align-items: center; }
+.proto-banner button { font: inherit; background: #fff; color: #3b0764; border: 0; border-radius: 6px; padding: 3px 10px; cursor: pointer; font-weight: 700; }
+.sim-panel { background: #faf5ff; border-bottom: 2px solid #6b21a8; font-size: 0.9rem; }
+.sim-panel[hidden] { display: none; }
+.sim-inner { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px 16px; align-items: end; padding: 12px 20px; }
+.sim-panel h2 { font-size: 0.95rem; margin: 0; color: #6b21a8; }
+.sim-panel .field { gap: 4px; }
+.sim-panel label { font-size: 0.82rem; }
+.sim-panel select { min-height: 36px; padding: 6px 8px; }
+.sim-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.sim-row .btn { min-height: 36px; padding: 6px 12px; font-size: 0.85rem; }
+.tag-fict { font-size: 0.72rem; font-weight: 800; color: #6b21a8; background: #f3e8ff; border-radius: 4px; padding: 1px 6px; margin-left: 6px; }
+.view { min-height: 50vh; }
+.admin-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.admin-tabs a { text-decoration: none; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--line); background: #fff; font-weight: 600; font-size: 0.9rem; }
+.admin-tabs a[aria-current="page"] { background: var(--navy-800); color: #fff; border-color: var(--navy-800); }
+.flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.85rem; }
+.flow span { padding: 4px 10px; border-radius: 999px; background: var(--bg-soft); border: 1px solid var(--line); }
+.flow span.on { background: var(--teal-100); border-color: var(--teal-500); font-weight: 700; }
+.whatsapp-fab { right: auto; left: 18px; }
+@media (max-width: 860px) { .site-header .bar { position: relative; } }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
+<div class="proto-banner" role="note">
+  <span>PROTOTIPO · Datos, pagos y licencias simulados. Nada es real y no se concede acceso a la extensión.</span>
+  <button type="button" id="toggle-sim" aria-controls="sim-panel" aria-expanded="true">Panel de simulación</button>
+</div>
+<aside class="sim-panel" id="sim-panel" aria-label="Panel de simulación"><div class="container sim-inner">
+  <div><h2>Panel de simulación</h2><p class="small muted" style="margin:2px 0 0">Fecha simulada: <strong id="sim-now"></strong><br>Recorrido: <span id="sim-flow"></span></p></div>
+  <div class="field"><label for="sim-session">Sesión</label>
+    <select id="sim-session"><option value="out">Visitante sin sesión</option><option value="client">Cliente</option><option value="admin">Administrador</option><option value="comercial">Comercial</option><option value="soporte">Soporte</option></select></div>
+  <div class="field"><label for="sim-env">Entornos compatibles</label>
+    <select id="sim-env"><option value="1">Verificados (con evidencia)</option><option value="0">Sin verificar (estado actual real)</option></select></div>
+  <div class="field"><label for="sim-lic">Mecanismo de licencias</label>
+    <select id="sim-lic"><option value="sim">Simulado: activa al instante</option><option value="pending">Pendiente: sin API (estado actual real)</option><option value="error">Falla del servicio de licencias</option></select></div>
+  <div class="sim-row"><button type="button" class="btn btn-ghost" id="sim-time">Avanzar 10 días</button><button type="button" class="btn btn-ghost" id="sim-reset">Reiniciar</button></div>
+</div></aside>
+<header class="site-header">
+  <div class="container bar">
+    <a class="logo" href="#inicio" aria-label="LURIA, ir al inicio"><span class="logo-mark" aria-hidden="true"></span>LURIA</a>
+    <button type="button" class="btn btn-ghost nav-toggle" aria-expanded="false" aria-controls="menu-principal" id="nav-toggle">Menú</button>
+    <nav id="menu-principal" class="nav" data-open="false" aria-label="Principal"></nav>
+  </div>
+</header>
+<main id="contenido-principal" class="view" tabindex="-1"></main>
+<footer class="site-footer">
+  <div class="container grid grid-3">
+    <div><strong style="color:#fff;letter-spacing:.18em">LURIA</strong><p class="small">Extensión de Google Chrome para apoyar procesos académicos y administrativos de instructores virtuales.</p></div>
+    <nav aria-label="Legal" class="stack small" id="footer-legal"></nav>
+    <div class="small"><p><strong style="color:#fff">Vendedor</strong><br>Identidad del vendedor pendiente de publicación.</p><p><a href="#soporte">Soporte</a></p></div>
+  </div>
+  <div class="container independence small" id="independence"></div>
+</footer>
+<a class="whatsapp-fab" href="#soporte" title="El número de WhatsApp se configura en producción">WhatsApp (por configurar)</a>
+
+
+
+<script>
+const DATA = /*__DATA__*/;
+
+/* ───────── Lógica portada de src/lib/domain (mismas reglas que la app; probadas allí) ───────── */
+const OFF = -5 * 3600e3;
+const toBog = (d) => { const t = new Date(d.getTime() + OFF); return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() }; };
+const dim = (y, m) => new Date(Date.UTC(y, m, 0)).getUTCDate();
+const addMonths = (b, n, a) => { const z = b.m - 1 + n; const y = b.y + Math.floor(z / 12), m = (z % 12) + 1; return { y, m, d: Math.min(a, dim(y, m)) }; };
+const eod = (l) => new Date(Date.UTC(l.y, l.m - 1, l.d, 23, 59, 59, 999) - OFF);
+function nextPeriod(paidAt, curEnd, anchor) {
+  if (curEnd && anchor && paidAt <= curEnd) return { start: new Date(curEnd.getTime() + 1), end: eod(addMonths(toBog(curEnd), 1, anchor)), anchor, cont: true };
+  const l = toBog(paidAt); return { start: paidAt, end: eod(addMonths(l, 1, l.d)), anchor: l.d, cont: false };
+}
+const fDate = (d) => new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", day: "numeric", month: "long", year: "numeric" }).format(d);
+const fDT = (d) => new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(d) + " (hora de Colombia)";
+const cop = (n) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+function classify(i, envOk) {
+  if (i.device === "celular" || i.device === "tableta") return ["no_compatible", "LURIA requiere Google Chrome en un computador. No funciona en celulares ni tabletas."];
+  if (i.browser !== "chrome") return ["no_compatible", "LURIA es una extensión de Google Chrome. Instala Chrome en tu computador y vuelve a verificar."];
+  if (i.platform !== "zajuna") return ["no_compatible", "Por ahora LURIA solo está diseñada para el entorno ZAJUNA. No podemos ofrecerte la compra."];
+  if (i.virtualOnly !== "si") return ["no_compatible", "LURIA está dirigida a instructores que imparten formación exclusivamente virtual."];
+  if (!envOk) return ["en_prueba", "Tu configuración coincide con el entorno de referencia, pero la compatibilidad exacta aún está en verificación técnica. La compra permanece bloqueada."];
+  return ["verificado", "Tu configuración coincide con un entorno verificado. Puedes continuar con la compra."];
+}
+function customerState(s, now) {
+  if (!s.sub) { if (s.lastPay === "pending") return "pago_pendiente"; if (s.lastPay === "declined") return "pago_rechazado"; return "sin_suscripcion"; }
+  if (s.sub.status === "revoked") return "revocada";
+  if (s.sub.end <= now || s.sub.status === "expired") return "vencida";
+  if (s.sub.status === "pending_activation") return "activacion_pendiente";
+  if (s.sub.status === "activation_failed") return "activacion_fallida";
+  if (!(s.lic && s.lic.status === "active" && s.lic.until > now)) return "activacion_pendiente";
+  if (s.sub.cancel) return "cancelada_al_final";
+  if (Math.ceil((s.sub.end - now) / 864e5) <= 5) return "por_vencer";
+  return "activa";
+}
+const STATE_UI = {
+  sin_suscripcion: ["Sin suscripción", "badge-info", "Aún no tienes una suscripción."],
+  pago_pendiente: ["Pago pendiente", "badge-warn", "Tu pago está en proceso. Te avisaremos cuando la pasarela lo confirme."],
+  pago_rechazado: ["Pago no aprobado", "badge-err", "La pasarela no aprobó el pago. Puedes intentarlo de nuevo."],
+  activacion_pendiente: ["Pago recibido, activación pendiente", "badge-warn", "Tu pago está verificado. Estamos activando tu licencia."],
+  activacion_fallida: ["Activación con incidencia", "badge-err", "Tu pago está verificado, pero la activación tuvo un problema. Ya se creó una tarea para resolverlo."],
+  activa: ["Activa", "badge-ok", "Tu licencia está activa."],
+  por_vencer: ["Próxima a vencer", "badge-warn", "Tu período termina pronto. Renueva para no perder el acceso."],
+  cancelada_al_final: ["Activa · no se renovará", "badge-info", "Cancelaste los cobros futuros. Conservas el acceso hasta el fin del período pagado."],
+  vencida: ["Vencida", "badge-err", "Tu período terminó. Renueva para recuperar el acceso."],
+  revocada: ["Revocada", "badge-err", "El acceso fue revocado por un reembolso o reversión."],
+};
+
+/* ───────── Estado simulado ───────── */
+const BASE_NOW = new Date("2026-11-10T15:00:00Z");
+const fresh = () => ({ session: "out", envOk: true, licMode: "sim", days: 0, user: null, elig: null, order: null, lastPay: null, sub: null, lic: null, payments: [], tasks: [], support: [], marketing: false, msg: null, regDone: false, path: [] });
+let S = fresh();
+const now = () => new Date(BASE_NOW.getTime() + S.days * 864e5);
+const ref = () => "LUR-" + toBog(now()).y + String(toBog(now()).m).padStart(2, "0") + String(toBog(now()).d).padStart(2, "0") + "-" + Math.random().toString(36).slice(2, 12).toUpperCase().padEnd(10, "X");
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const isStaff = () => ["admin", "comercial", "soporte"].includes(S.session);
+const logged = () => S.session !== "out";
+const step = (s) => { if (S.path[S.path.length - 1] !== s) S.path.push(s); };
+
+/* ───────── Componentes ───────── */
+const notice = (kind, title, body) => `<div class="notice notice-${kind}" role="${kind === "err" ? "alert" : "status"}">${title ? `<strong style="display:block;margin-bottom:4px">${title}</strong>` : ""}${body}</div>`;
+const desktop = () => notice("warn", "Requisito de instalación", DATA.desktop);
+const statusBadge = (st) => `<span class="badge ${st === "verificada" ? "badge-ok" : "badge-info"}">${DATA.statusLabels[st]}</span>`;
+function featureCard(f, detailed) {
+  const items = (detailed ? f.characteristics : f.characteristics.slice(0, 3)).map((c) => `<li>${esc(c)}</li>`).join("");
+  return `<article class="card" id="f-${f.id}">
+    <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px"><span class="feature-num" aria-hidden="true">${f.order}</span>${statusBadge(f.status)}</div>
+    <h3>${esc(f.name)}</h3><p class="muted">${esc(f.summary)}</p>
+    ${detailed ? `<h4>Qué problema aborda</h4><p>${esc(f.problem)}</p><h4>Qué hace</h4>` : ""}
+    <ul class="check-list">${items}</ul>
+    <p class="benefit"><strong>Beneficio:</strong> ${esc(f.benefit)}</p>
+    ${detailed ? `<div class="grid grid-2" style="margin-top:16px"><div><h4>Requisitos</h4><ul>${f.requirements.map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div><div><h4>Limitaciones</h4><ul>${f.limitations.map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div></div><p class="small muted">Demostración autorizada: en preparación.</p>` : ""}
+    <p class="small muted" style="margin-top:8px">${DATA.statusLabels[f.status]}. La descripción proviene del fabricante y está pendiente de confirmación técnica individual.</p>
+  </article>`;
+}
+const faqs = () => DATA.faqs.map((f) => `<details><summary>${esc(f.q)}</summary><p style="margin-top:10px">${esc(f.a)}</p></details>`).join("");
+const needLogin = (next) => `<section class="section"><div class="container" style="max-width:560px">${notice("info", "Inicia sesión para continuar", `Esta sección es privada. <a href="#ingreso" data-next="${next}">Ingresar</a> o <a href="#registro">crear cuenta</a>.`)}</div></section>`;
+
+/* ───────── Vistas ───────── */
+const V = {};
+V.inicio = () => `
+<section class="hero"><div class="container">
+  <span class="eyebrow">Herramienta de apoyo para instructores en ZAJUNA</span>
+  <h1>Menos tiempo en tareas operativas, más tiempo para acompañar la formación.</h1>
+  <p class="lead">LURIA es una extensión de Google Chrome que centraliza procesos académicos y administrativos de tus fichas virtuales: revisión de entregas, evidencias, fechas, juicios y reenvíos.</p>
+  <div class="hero-actions"><a href="#compatibilidad" class="btn btn-accent">Verificar compatibilidad</a><a href="#funciones" class="btn btn-ghost">Ver las seis funciones</a></div>
+  <p class="small muted" style="margin-top:16px">Suscripción individual de ${cop(40000)} al mes · Sin pruebas gratuitas · Requiere Chrome en computador</p>
+</div></section>
+<section class="section"><div class="container"><h2>Para qué sirve</h2><div class="grid grid-3">
+  ${[["Centraliza la información", "Consulta el estado de la ficha sin recorrer pantalla por pantalla."], ["Reduce tareas repetitivas", "Agrupa acciones que hoy haces una por una, como ajustes de fechas."], ["Apoya tus decisiones", "Consolida aprobados, pendientes y novedades para hacer seguimiento."]].map(([t, d]) => `<div class="card card-flat"><h3>${t}</h3><p class="muted">${d}</p></div>`).join("")}
+</div></div></section>
+<section class="section section-soft"><div class="container"><h2>Seis funciones</h2><p class="muted">Descripciones declaradas por el fabricante. Cada función indica su estado de validación técnica.</p>
+  <div class="grid grid-3">${DATA.features.map((f) => featureCard(f, false)).join("")}</div>
+  <p style="margin-top:20px"><a href="#funciones">Ver el detalle, requisitos y limitaciones de cada función →</a></p></div></section>
+<section class="section"><div class="container grid grid-2" style="align-items:center">
+  <div><h2>Mira cómo funciona antes de comprar</h2><p class="muted">Las demostraciones autorizadas se publican en la página de demostración. No usan datos reales de aprendices.</p><a href="#demostracion" class="btn btn-ghost">Ir a demostraciones</a></div>
+  <div><h2>Compatibilidad</h2>${desktop()}<a href="#compatibilidad">Revisa los entornos verificados →</a></div>
+</div></section>
+<section class="section section-soft"><div class="container grid grid-2" style="align-items:center">
+  <div><h2>Precio</h2><p class="price">${cop(40000)} <small>COP / mes</small></p><p class="muted">Suscripción individual. Sin pruebas ni días gratuitos. Puedes cancelar los cobros futuros cuando quieras.</p></div>
+  <div class="hero-actions"><a href="#precio" class="btn btn-primary">Ver qué incluye</a></div>
+</div></section>
+<section class="section"><div class="container"><h2>Preguntas frecuentes</h2>${faqs()}</div></section>
+<section class="section section-soft"><div class="container"><h2>Contacto</h2><p class="muted">¿Tienes dudas sobre compatibilidad o compra? Escríbenos por WhatsApp (número por configurar) o desde <a href="#soporte">Soporte</a>.</p>${notice("info", "Aviso de independencia", DATA.independence)}</div></section>`;
+
+V.funciones = () => `<section class="section"><div class="container stack">
+  <h1>Funciones de LURIA</h1><p class="lead">Seis módulos para apoyar la gestión académica y administrativa de tus fichas virtuales.</p>
+  ${notice("info", "Cómo leer esta página", "Las descripciones provienen del fabricante. Cada función muestra su estado: <em>declarada</em>, <em>en validación</em>, <em>verificada</em>, <em>parcialmente disponible</em> o <em>no disponible</em>. Solo se marca como verificada con evidencia técnica.")}
+  <div class="stack">${DATA.features.map((f) => featureCard(f, true)).join("")}</div>
+  <p><a href="#compatibilidad" class="btn btn-accent">Verificar compatibilidad</a></p></div></section>`;
+
+V.compatibilidad = () => {
+  const r = S.elig;
+  return `<section class="section"><div class="container stack">
+  <h1>Compatibilidad</h1><p class="lead">Antes de pagar, confirma que tu entorno es compatible. Si no lo es, no te dejaremos comprar.</p>${desktop()}
+  <div class="grid grid-2">
+    <div class="card card-flat"><h2>Requisitos</h2><ul><li><strong>Navegador:</strong> Google Chrome actualizado.</li><li><strong>Dispositivo:</strong> computador de escritorio o portátil.</li><li><strong>Entorno:</strong> ZAJUNA, en una configuración verificada.</li><li><strong>Formación:</strong> exclusivamente virtual.</li><li><strong>Instalación:</strong> permisos para instalar extensiones en Chrome.</li></ul></div>
+    <div class="card card-flat"><h2>Entornos verificados</h2>${S.envOk ? `<div class="table-wrap"><table><thead><tr><th>Plataforma</th><th>Navegador</th><th>Estado</th></tr></thead><tbody><tr><td>ZAJUNA <span class="tag-fict">FICTICIO</span></td><td>Chrome escritorio</td><td><span class="badge badge-ok">Verificado</span></td></tr></tbody></table></div>` : notice("warn", "Pendiente: compatibilidad exacta", "La lista de entornos verificados aún no está confirmada técnicamente. Mientras tanto, la compra en línea permanece bloqueada.")}
+    <h3 style="margin-top:14px">Limitaciones conocidas</h3><ul><li>No funciona en navegadores móviles ni en tabletas.</li><li>Cambios en la plataforma pueden afectar temporalmente algunas funciones.</li><li>Equipos administrados pueden bloquear la instalación de extensiones.</li></ul></div>
+  </div>
+  <div class="card"><h2>Verifica tu elegibilidad</h2>${eligForm()}${r ? notice(r[0] === "verificado" ? "ok" : r[0] === "no_compatible" ? "err" : "warn", null, esc(r[1]) + (r[0] === "verificado" ? ` <a href="#precio">Continuar a precio y compra →</a>` : "")) : ""}</div>
+  </div></section>`;
+};
+const eligForm = () => `<form class="form" id="elig-form">
+  <div class="field"><label for="platform">Plataforma en la que impartes formación</label><select id="platform" name="platform"><option value="zajuna">ZAJUNA</option><option value="otra">Otra</option></select></div>
+  <div class="field"><label for="browser">Navegador que usas</label><select id="browser" name="browser"><option value="chrome">Google Chrome</option><option value="edge">Microsoft Edge</option><option value="firefox">Firefox</option><option value="safari">Safari</option></select></div>
+  <div class="field"><label for="device">Dispositivo</label><select id="device" name="device"><option value="portatil">Computador portátil</option><option value="escritorio">Computador de escritorio</option><option value="tableta">Tableta</option><option value="celular">Celular</option></select></div>
+  <div class="field"><label for="virtualOnly">¿Impartes formación exclusivamente virtual?</label><select id="virtualOnly" name="virtualOnly"><option value="si">Sí</option><option value="no">No</option></select></div>
+  <button class="btn btn-primary">Verificar</button></form>`;
+
+V.demostracion = () => `<section class="section"><div class="container stack"><h1>Demostraciones</h1><p class="lead">Conoce el funcionamiento antes de comprar. Las demostraciones no dan acceso a la extensión.</p>
+  ${notice("warn", "Demostraciones en preparación", "Aún no hay videos o capturas autorizados del funcionamiento real. No publicamos ilustraciones como si fueran capturas, ni material con datos de aprendices.")}
+  <div class="grid grid-2">${DATA.features.map((f) => `<article class="card card-flat"><h2 style="font-size:1.2rem">${f.order}. ${esc(f.name)}</h2><ol><li>Abres tu ficha en el entorno compatible con LURIA activa.</li><li>${esc(f.summary)}</li><li>${esc(f.characteristics[1])}</li><li>Revisas el resultado antes de cualquier acción sobre la plataforma.</li></ol><p class="small muted">Demostración autorizada: pendiente.</p></article>`).join("")}</div></div></section>`;
+
+V.precio = () => `<section class="section"><div class="container grid grid-2" style="align-items:start">
+  <div class="card"><h1 style="font-size:1.6rem">LURIA · suscripción mensual</h1><p class="price">${cop(40000)} <small>COP / mes</small></p><p class="small muted">Tratamiento tributario del precio pendiente de confirmación. El valor final se muestra antes de pagar.</p>
+    <h2 style="font-size:1.1rem">Incluye</h2><ul class="check-list"><li>Licencia individual de la extensión LURIA durante un mes.</li><li>Las seis funciones, según su estado de disponibilidad.</li><li>Actualizaciones publicadas durante la vigencia.</li><li>Soporte por los canales oficiales.</li></ul>
+    <a href="#compra" class="btn btn-primary btn-block">Suscribirme</a><p class="small muted" style="margin-top:10px">Sin pruebas gratuitas, sin plan gratuito y sin descuentos.</p></div>
+  <div class="stack">${desktop()}<div class="card card-flat"><h2>Condiciones</h2><dl>
+    <dt><strong>Duración</strong></dt><dd>Un mes. Vence al final del mismo número de día del mes siguiente, hora de Colombia.</dd>
+    <dt><strong>Renovación</strong></dt><dd>Modalidad (manual o automática) por definir. En este prototipo: manual.</dd>
+    <dt><strong>Cancelación</strong></dt><dd>Cancela los cobros futuros desde tu cuenta; conservas el acceso hasta el final del período pagado.</dd>
+    <dt><strong>Entrega</strong></dt><dd>Activación de la licencia después de que la pasarela verifique el pago (plazo de activación por definir).</dd>
+    <dt><strong>Soporte</strong></dt><dd>WhatsApp y formulario de soporte.</dd></dl></div>
+    ${notice("warn", "Pendiente: identidad del vendedor", "Los datos del vendedor se publicarán antes de habilitar cobros reales.")}</div>
+</div></section>`;
+
+V.registro = () => S.regDone
+  ? `<section class="section"><div class="container" style="max-width:560px">${notice("ok", "Cuenta creada", "Revisa tu correo para confirmar la cuenta. Si ya tenías una cuenta, puedes iniciar sesión o recuperar el acceso.")}<button class="btn btn-primary" id="confirm-email">Simular clic en el enlace de confirmación</button></div></section>`
+  : `<section class="section"><div class="container grid grid-2" style="align-items:start">
+  <div><h1>Crea tu cuenta</h1><p class="muted">Crear una cuenta no da acceso a la extensión: el acceso se activa después de un pago verificado.</p>${desktop()}<p>¿Ya tienes cuenta? <a href="#ingreso">Ingresa</a></p></div>
+  <div class="card"><form class="form" id="reg-form" novalidate>
+    <p class="error" role="alert" id="reg-err" hidden></p>
+    <div class="field"><label for="r-name">Nombre completo</label><input id="r-name" name="name" type="text" autocomplete="name" value="Instructora de prueba"></div>
+    <div class="field"><label for="r-email">Correo electrónico</label><input id="r-email" name="email" type="email" autocomplete="email" value="instructora@ejemplo.invalid"><span class="hint">Usa un correo personal. No uses credenciales institucionales.</span></div>
+    <div class="field"><label for="r-pass">Contraseña</label><input id="r-pass" name="password" type="password" autocomplete="new-password"><span class="hint">Mínimo 10 caracteres, con letras y números. No uses tu contraseña de ZAJUNA.</span></div>
+    <div class="field"><label for="r-phone">Celular (opcional)</label><input id="r-phone" name="phone" type="tel" placeholder="3001234567"></div>
+    <label class="checkbox"><input type="checkbox" id="r-terms" name="terms"> <span>Acepto los <a href="#legal-terminos">términos y condiciones</a>.</span></label>
+    <label class="checkbox"><input type="checkbox" id="r-priv" name="privacy"> <span>Leí y acepto el <a href="#legal-privacidad">aviso de privacidad y tratamiento de datos</a>.</span></label>
+    <label class="checkbox"><input type="checkbox" id="r-mk" name="marketing"> <span>Quiero recibir novedades y ofertas de LURIA (opcional).</span></label>
+    <button class="btn btn-primary">Crear cuenta</button></form></div></div></section>`;
+
+V.ingreso = () => `<section class="section"><div class="container" style="max-width:520px"><h1>Ingresar</h1><div class="card"><form class="form" id="login-form">
+  <p class="error" role="alert" id="login-err" hidden></p>
+  <div class="field"><label for="l-email">Correo electrónico</label><input id="l-email" type="email" value="instructora@ejemplo.invalid"></div>
+  <div class="field"><label for="l-pass">Contraseña</label><input id="l-pass" type="password" placeholder="cualquier valor de 10+ caracteres"></div>
+  <button class="btn btn-primary">Ingresar</button></form></div>
+  <p style="margin-top:16px"><a href="#recuperar-acceso">¿Olvidaste tu contraseña?</a> · <a href="#registro">Crear cuenta</a></p></div></section>`;
+
+V["recuperar-acceso"] = () => `<section class="section"><div class="container" style="max-width:520px"><h1>Recuperar acceso</h1><div class="card" id="rec-box"><form class="form" id="rec-form"><div class="field"><label for="rec-email">Correo de tu cuenta</label><input id="rec-email" type="email" required></div><button class="btn btn-primary">Enviar enlace</button></form></div><p class="small muted" style="margin-top:12px">La respuesta es la misma exista o no la cuenta (no revela si un correo está registrado). El enlace vence en una hora.</p></div></section>`;
+
+V.compra = () => {
+  if (!logged()) return needLogin("compra");
+  const reasons = [];
+  if (S.elig?.[0] !== "verificado") reasons.push("Primero verifica que tu entorno está entre los entornos compatibles verificados.");
+  const future = S.sub && S.sub.periods && S.sub.periods.some((p) => p.start > now());
+  if (future) reasons.push("Ya tienes un período pagado que aún no inicia; espera a que comience para volver a renovar.");
+  const cont = S.sub && S.sub.status !== "revoked" && S.sub.end > now();
+  return `<section class="section"><div class="container grid grid-2" style="align-items:start">
+  <div class="card stack"><h1 style="font-size:1.6rem">Resumen del pedido</h1>
+    <div class="table-wrap"><table><tbody>
+      <tr><th scope="row">Producto</th><td>LURIA — suscripción mensual</td></tr>
+      <tr><th scope="row">Precio</th><td>${cop(40000)} COP · tratamiento tributario pendiente</td></tr>
+      <tr><th scope="row">Período</th><td>1 mes${cont ? `, a partir del ${fDate(S.sub.end)} (renovación)` : ", desde la verificación del pago"}</td></tr>
+      <tr><th scope="row">Renovación</th><td>Manual: no haremos cobros automáticos</td></tr>
+      <tr><th scope="row">Vendedor</th><td>Pendiente de publicación</td></tr>
+      <tr><th scope="row">Medio de pago</th><td>Simulador (prototipo)</td></tr></tbody></table></div>
+    <p class="small muted">El precio lo calcula el servidor. Después de confirmar, te enviamos a la pasarela. El acceso se activa cuando la pasarela verifica el pago y la licencia queda activa.</p></div>
+  <div class="stack">${desktop()}${notice("warn", "Prototipo", "Modo simulado. No se cobrará dinero y no se activará la extensión real.")}
+    ${S.elig?.[0] !== "verificado" ? `<div class="card card-flat"><h2 style="font-size:1.2rem">Primero verifica la compatibilidad</h2>${eligForm()}${S.elig ? notice(S.elig[0] === "no_compatible" ? "err" : "warn", null, esc(S.elig[1])) : ""}</div>` : ""}
+    ${reasons.length ? notice("err", "No es posible comprar en este momento", `<ul style="margin:0">${reasons.map((r) => `<li>${r}</li>`).join("")}</ul>`) : `<form class="card form" id="checkout-form"><h2 style="font-size:1.2rem">Confirmación</h2>
+      <label class="checkbox"><input type="checkbox" id="c-terms"> <span>Leí y acepto las <a href="#legal-condiciones-compra">condiciones de compra</a>, incluida la información sobre retracto, reversión y renovación.</span></label>
+      <label class="checkbox"><input type="checkbox" id="c-desk"> <span>Entiendo que LURIA se usa en Google Chrome en un computador y no en el celular.</span></label>
+      <p class="error" role="alert" id="c-err" hidden></p><button class="btn btn-primary btn-block">Continuar al simulador de pago</button></form>`}
+  </div></div></section>`;
+};
+
+V.pasarela = () => !S.order ? `<section class="section"><div class="container">${notice("info", null, "No hay un pedido en curso. <a href=\"#compra\">Ir a compra</a>.")}</div></section>`
+  : `<section class="section"><div class="container" style="max-width:640px"><span class="badge badge-sim">SIMULACIÓN DE PASARELA</span><h1>Pasarela simulada</h1>
+  <p>Pedido <code>${S.order.ref}</code> por <strong>${cop(40000)}</strong>. Elige el resultado. El evento se firma con el formato de Wompi y recorre la verificación completa; la URL de retorno no activa nada por sí sola.</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-accent" data-pay="approved">Simular pago aprobado</button><button class="btn btn-ghost" data-pay="pending">Simular pago pendiente</button><button class="btn btn-danger" data-pay="declined">Simular rechazo</button></div>
+  <h2 style="font-size:1.1rem;margin-top:28px">Pruebas de seguridad</h2>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost" data-pay="forged">Enviar evento con firma falsa</button><button class="btn btn-ghost" data-pay="cheap">Pago por $1.000 (importe manipulado)</button><button class="btn btn-ghost" data-pay="dup">Reenviar el último evento (duplicado)</button></div>
+  <div id="sec-out" style="margin-top:14px"></div></div></section>`;
+
+V["pago-resultado"] = () => {
+  if (!logged()) return needLogin("pago-resultado");
+  const p = S.lastPay; const st = customerState(S, now());
+  let k = "info", t = "Pago pendiente", m = "Aún no recibimos la confirmación de la pasarela. Esta página se actualiza sola.";
+  if (p === "declined") { k = "err"; t = "Pago rechazado"; m = "La pasarela no aprobó el pago. No se realizó ningún cobro por este pedido."; }
+  if (p === "approved") { if (st === "activa" || st === "por_vencer" || st === "cancelada_al_final") { k = "ok"; t = "Pago aprobado · licencia activa"; m = "Tu pago fue verificado y tu licencia está activa."; } else { k = "warn"; t = "Pago recibido · activación pendiente"; m = "Tu pago fue verificado. La licencia está en proceso de activación; se creó una tarea operativa auditable."; } }
+  if (p === "review") { k = "warn"; t = "Pago en revisión"; m = "El importe no coincide con el pedido. Requiere revisión manual; no se habilitó ningún acceso."; }
+  return `<section class="section"><div class="container" style="max-width:680px"><h1>Resultado del pago</h1>${notice(k, t, m)}<p class="small muted">Referencia del pedido: <code>${S.order?.ref ?? "—"}</code></p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-primary" href="#cuenta">Ir a mi cuenta</a>${p === "declined" ? `<a class="btn btn-ghost" href="#compra">Intentar de nuevo</a>` : ""}${k === "ok" ? `<a class="btn btn-ghost" href="#instalacion">Instrucciones de instalación</a>` : ""}<a class="btn btn-ghost" href="#soporte">Soporte</a></div></div></section>`;
+};
+
+V.cuenta = () => {
+  if (!logged()) return needLogin("cuenta");
+  const st = customerState(S, now()); const [lbl, cls, help] = STATE_UI[st];
+  const canRenew = !["pago_pendiente", "activacion_pendiente", "activacion_fallida"].includes(st);
+  const live = S.sub && !["revoked", "expired"].includes(S.sub.status) && S.sub.end > now();
+  return `<section class="section"><div class="container stack">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px"><h1 style="margin:0">Hola, ${esc(S.user?.name ?? "cliente")}</h1><button class="btn btn-ghost" id="logout">Cerrar sesión</button></div>
+  ${S.msg ? notice("ok", null, S.msg) : ""}
+  <div class="grid grid-2">
+    <div class="card stack"><h2 style="font-size:1.25rem">Suscripción</h2><p><span class="badge ${cls}">${lbl}</span></p><p class="muted">${help}</p>
+      ${S.sub ? `<dl><dt><strong>Inicio</strong></dt><dd>${fDate(S.sub.start)}</dd><dt><strong>Vencimiento</strong></dt><dd>${fDT(S.sub.end)}</dd><dt><strong>Renovación</strong></dt><dd>${S.sub.cancel ? "No se renovará" : "Manual"}</dd><dt><strong>Licencia</strong></dt><dd>${S.lic ? { active: "Activa", requested: "Solicitada", revoked: "Revocada", expired: "Vencida" }[S.lic.status] : "Sin licencia"}</dd></dl>` : ""}
+      <div style="display:flex;gap:10px;flex-wrap:wrap">${canRenew ? `<a class="btn btn-primary" href="#compra">${S.sub ? "Renovar un mes" : "Suscribirme"}</a>` : ""}${["activa", "por_vencer", "cancelada_al_final"].includes(st) ? `<a class="btn btn-ghost" href="#instalacion">Instalación</a>` : ""}</div>
+      ${live ? (S.sub.cancel ? `<button class="btn btn-ghost" id="resume">Reanudar renovaciones</button>` : `<div id="cancel-box"><button class="btn btn-danger" id="cancel-ask">Cancelar cobros futuros</button></div>`) : ""}
+    </div>
+    <div class="card stack"><h2 style="font-size:1.25rem">Tus datos</h2><p class="small muted">Correo: ${esc(S.user?.email ?? "")}</p>
+      <form class="form" id="prof-form"><div class="field"><label for="p-name">Nombre</label><input id="p-name" type="text" value="${esc(S.user?.name ?? "")}"></div>
+      <label class="checkbox"><input type="checkbox" id="p-mk" ${S.marketing ? "checked" : ""}> <span>Recibir novedades y ofertas. Si lo desmarcas, dejaremos de enviarte promociones.</span></label>
+      <button class="btn btn-ghost">Guardar cambios</button></form></div>
+  </div>
+  <div class="card"><h2 style="font-size:1.25rem">Historial de pagos</h2>${S.payments.length ? `<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Pedido</th><th>Valor</th><th>Estado</th></tr></thead><tbody>${S.payments.map((p) => `<tr><td>${fDT(p.at)}</td><td><code>${p.ref}</code><span class="tag-fict">SIMULADO</span></td><td>${cop(p.amount)}</td><td>${{ approved: "Aprobado", pending: "Pendiente", declined: "Rechazado" }[p.status] ?? p.status}${p.discrepancy ? " · en revisión" : ""}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">Aún no tienes pagos registrados.</p>`}
+  <p class="small muted" style="margin-top:10px">Estos registros son comprobantes de transacción, no facturas electrónicas.</p></div>
+  <p><a href="#soporte">¿Necesitas ayuda? Ir a soporte →</a></p></div></section>`;
+};
+
+V.instalacion = () => `<section class="section"><div class="container stack" style="max-width:820px"><h1>Instalación</h1>${desktop()}
+  <h2>Requisitos</h2><ul><li>Google Chrome actualizado en computador.</li><li>Permiso para instalar extensiones en ese equipo.</li><li>Cuenta con suscripción pagada y licencia activa.</li></ul>
+  <h2>Pasos</h2>${notice("warn", "Pendiente: enlace real de instalación", "El procedimiento detallado y el enlace oficial se publicarán cuando el equipo de la extensión los confirme. No usamos enlaces provisionales.")}
+  <h2>Solución de problemas</h2>
+  <details><summary>Chrome no me deja instalar extensiones</summary><p>Tu equipo puede estar administrado por una organización. Usa un equipo propio o consulta a tu administrador.</p></details>
+  <details><summary>Pagué pero no tengo acceso</summary><p>Revisa el estado en «Mi cuenta». Si dice «activación pendiente», ya creamos una tarea para activarla.</p></details>
+  <details><summary>La extensión no aparece en la plataforma</summary><p>Verifica que estás en un entorno compatible y que la licencia está activa.</p></details></div></section>`;
+
+V.soporte = () => `<section class="section"><div class="container stack"><h1>Soporte</h1>
+  ${notice("warn", "Por tu seguridad", "Nunca te pediremos contraseñas institucionales ni información o evidencias de aprendices. No las envíes por ningún canal.")}
+  <div class="grid grid-2">
+    <div class="card card-flat stack"><h2>WhatsApp</h2><p class="muted small">El número de atención se configura en producción (SUPPORT_WHATSAPP). Cada botón abre un mensaje predefinido sin datos personales.</p>
+      ${["Consultas comerciales", "Ayuda de instalación", "Dudas de compatibilidad", "Problemas de pago", "Renovaciones", "Incidencias técnicas"].map((l) => `<span class="btn btn-ghost" aria-disabled="true">${l}</span>`).join("")}</div>
+    <div class="card card-flat"><h2>Formulario de incidencia</h2>${logged() ? `<form class="form" id="sup-form"><div class="field"><label for="s-cat">Tema</label><select id="s-cat"><option>compra</option><option>instalacion</option><option>compatibilidad</option><option>pago</option><option>renovacion</option><option>tecnica</option></select></div><div class="field"><label for="s-desc">Describe el problema</label><textarea id="s-desc" aria-describedby="s-hint"></textarea><span id="s-hint" class="hint">No incluyas contraseñas ni datos de aprendices.</span></div><p class="error" role="alert" id="s-err" hidden></p><button class="btn btn-primary">Enviar</button></form>` : `<p><a href="#ingreso">Inicia sesión</a> para registrar una incidencia y consultar su estado.</p>`}</div>
+  </div>
+  ${S.support.length ? `<div class="card card-flat"><h2>Tus solicitudes</h2><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Tema</th><th>Estado</th></tr></thead><tbody>${S.support.map((r) => `<tr><td>${fDT(r.at)}</td><td>${esc(r.cat)}</td><td>${r.status}</td></tr>`).join("")}</tbody></table></div></div>` : ""}
+  <h2>Preguntas frecuentes</h2>${faqs()}</div></section>`;
+
+V.legal = (slug) => {
+  const d = DATA.legal.find((x) => x.slug === slug) ?? DATA.legal[0];
+  return `<section class="section"><div class="container stack" style="max-width:820px"><p class="small"><a href="#legal">Documentos legales</a></p><h1>${esc(d.title)}</h1>
+  ${notice("warn", "Borrador pendiente de revisión jurídica", "Este texto es un borrador técnico. Los apartados entre corchetes dependen de decisiones pendientes y deben revisarse por un abogado antes de habilitar cobros reales.")}
+  ${d.sections.map((s) => `<div><h2 style="font-size:1.25rem">${esc(s.heading)}</h2>${s.body.map((p) => `<p>${esc(p)}</p>`).join("")}</div>`).join("")}
+  <p class="small">${DATA.legal.map((x) => `<a href="#legal-${x.slug}">${esc(x.title)}</a>`).join(" · ")}</p></div></section>`;
+};
+
+/* ───────── Administración ───────── */
+const FICT = [
+  { name: "Cliente ficticio A", email: "a@ejemplo.invalid", status: "active", end: "2026-12-02", channel: "whatsapp" },
+  { name: "Cliente ficticio B", email: "b@ejemplo.invalid", status: "active", end: "2026-11-13", channel: "referido" },
+  { name: "Cliente ficticio C", email: "c@ejemplo.invalid", status: "expired", end: "2026-10-28", channel: "organico" },
+  { name: "Cliente ficticio D", email: "d@ejemplo.invalid", status: "pending_activation", end: "2026-12-09", channel: "whatsapp" },
+];
+const adminTabs = (cur) => {
+  const r = S.session; const tabs = [["admin", "Vista general", 1], ["admin-clientes", "Clientes", 1], ["admin-pagos", "Pagos", r !== "soporte"], ["admin-licencias", "Licencias", r !== "comercial"], ["admin-soporte", "Soporte", r !== "comercial"], ["admin-comercial", "Comercial", r !== "soporte"], ["admin-reportes", "Reportes", r !== "soporte"], ["admin-configuracion", "Configuración", r === "admin"]];
+  return `<nav class="admin-tabs" aria-label="Administración">${tabs.filter((t) => t[2]).map(([h, l]) => `<a href="#${h}" ${h === cur ? 'aria-current="page"' : ""}>${l}</a>`).join("")}</nav>`;
+};
+const adminWrap = (cur, body) => {
+  if (!logged()) return needLogin(cur);
+  if (!isStaff()) return `<section class="section"><div class="container">${notice("warn", "Sin permiso", "Tu cuenta no tiene un rol administrativo. Usa el panel de simulación para ingresar como administrador, comercial o soporte.")}</div></section>`;
+  return `<section class="section section-soft"><div class="container"><h1 style="font-size:1.7rem">Administración</h1><p class="small muted">Rol: <strong>${S.session}</strong> · Los registros marcados FICTICIO son datos de demostración; en producción solo se muestran registros reales.</p>${adminTabs(cur)}${body}</div></section>`;
+};
+const mine = () => S.user ? [{ name: S.user.name, email: S.user.email, status: S.sub?.status ?? "—", end: S.sub ? fDate(S.sub.end) : "—", channel: "directo", you: 1 }] : [];
+V.admin = () => adminWrap("admin", (() => {
+  const approved = S.payments.filter((p) => p.status === "approved" && !p.discrepancy).length;
+  const k = [["Usuarios registrados", 4 + (S.user ? 1 : 0)], ["Suscriptores activos", 2 + (customerState(S, now()) === "activa" ? 1 : 0)], ["Ventas verificadas", 3 + approved], ["Ingresos verificados", cop((3 + approved) * 40000)], ["Renovaciones próximas (5 días)", 1], ["Pedidos pendientes de pago", S.lastPay === "pending" ? 1 : 0], ["Activaciones pendientes", 1 + S.tasks.filter((t) => t.status === "open").length], ["Clientes vencidos", 1], ["Solicitudes de soporte abiertas", S.support.length]];
+  return `<div class="kpis">${k.map(([l, v]) => `<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("")}</div><p class="small muted" style="margin-top:12px">Cifras de demostración (FICTICIO + acciones de esta sesión). Los ingresos incluyen solo pagos verificados sin discrepancias.</p>`;
+})());
+V["admin-clientes"] = () => adminWrap("admin-clientes", `<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Suscripción</th><th>Vence</th><th>Canal</th></tr></thead><tbody>${[...mine(), ...FICT].map((c) => `<tr><td>${esc(c.name)}${c.you ? ' <span class="tag-fict">SESIÓN</span>' : ' <span class="tag-fict">FICTICIO</span>'}</td><td>${esc(c.email)}</td><td>${c.status}</td><td>${c.end}</td><td>${c.channel}</td></tr>`).join("")}</tbody></table></div>`);
+V["admin-pagos"] = () => adminWrap("admin-pagos", `<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Pedido</th><th>Valor</th><th>Estado</th><th>Conciliación</th></tr></thead><tbody>
+  ${S.payments.map((p) => `<tr><td>${fDT(p.at)}</td><td><code>${p.ref}</code> <span class="tag-fict">SESIÓN</span></td><td>${cop(p.amount)}</td><td>${p.status}</td><td>${p.discrepancy ? '<span class="badge badge-err">Discrepancia</span>' : '<span class="badge badge-ok">Conciliado</span>'}</td></tr>`).join("")}
+  <tr><td>2 nov 2026</td><td><code>LUR-20261102-FICTICIO01</code> <span class="tag-fict">FICTICIO</span></td><td>${cop(40000)}</td><td>approved</td><td><span class="badge badge-ok">Conciliado</span></td></tr></tbody></table></div>
+  ${S.session === "admin" ? `<div class="card" style="margin-top:20px"><h2 style="font-size:1.2rem">Registrar pago manual con evidencia</h2><p class="small muted">Para pagos recibidos fuera de la pasarela (p. ej. Nequi en la transición). Un comprobante enviado por chat no basta. Cada registro se audita y la referencia externa no puede reutilizarse.</p>
+  <form class="form" id="manual-form"><div class="field"><label for="m-ref">Referencia del pedido</label><input id="m-ref" type="text" placeholder="LUR-20261110-XXXXXXXXXX" value="${S.order?.ref ?? ""}"></div><div class="field"><label for="m-ext">Referencia en Nequi</label><input id="m-ext" type="text"></div><div class="field"><label for="m-amt">Valor recibido (COP)</label><input id="m-amt" type="number" value="40000"></div><div class="field"><label for="m-note">Evidencia de verificación</label><textarea id="m-note" placeholder="Ej.: verificado en el historial de Nequi Negocios, movimiento del 10/11 a las 9:41 por $40.000."></textarea></div><p role="status" id="m-out"></p><button class="btn btn-primary">Registrar pago verificado</button></form></div>` : ""}`);
+V["admin-licencias"] = () => adminWrap("admin-licencias", `${notice(S.licMode === "pending" ? "warn" : "info", null, `Mecanismo de licencias: <strong>${{ sim: "simulado", pending: "pendiente (sin API)", error: "con fallas" }[S.licMode]}</strong>. La activación manual se habilita solo si existe un mecanismo real de vigencia y revocación.`)}
+  <div class="table-wrap"><table><thead><tr><th>Creada</th><th>Tipo</th><th>Estado</th><th>Intentos</th><th>Error</th><th>Acción</th></tr></thead><tbody>
+  ${S.tasks.map((t, i) => `<tr><td>${fDT(t.at)}</td><td>activación</td><td>${t.status}</td><td>${t.attempts}</td><td>${t.code}</td><td>${t.status === "open" && S.session === "admin" ? `<button class="btn btn-ghost" data-retry="${i}">Reintentar</button>` : "—"}</td></tr>`).join("")}
+  <tr><td>9 nov 2026</td><td>activación <span class="tag-fict">FICTICIO</span></td><td>open</td><td>1</td><td>LICENSE_ADAPTER_PENDING</td><td>—</td></tr></tbody></table></div>`);
+V["admin-soporte"] = () => adminWrap("admin-soporte", `<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Tema</th><th>Descripción</th><th>Estado</th></tr></thead><tbody>${S.support.map((r) => `<tr><td>${fDT(r.at)}</td><td>${esc(r.cat)}</td><td>${esc(r.desc)}</td><td>${r.status}</td></tr>`).join("")}<tr><td>8 nov 2026</td><td>instalacion <span class="tag-fict">FICTICIO</span></td><td>No encuentro el enlace de instalación.</td><td>en_proceso</td></tr></tbody></table></div>`);
+V["admin-comercial"] = () => adminWrap("admin-comercial", `<h2 style="font-size:1.2rem">Fuente de adquisición</h2><div class="kpis">${[["whatsapp", 2], ["referido", 1], ["organico", 1], ["directo", S.user ? 1 : 0]].map(([c, n]) => `<div class="kpi"><div class="v">${n}</div><div class="l">${c}</div></div>`).join("")}</div>
+  <h2 style="font-size:1.2rem;margin-top:20px">Referidos y comisiones</h2><div class="table-wrap"><table><thead><tr><th>Código</th><th>Autorizado</th><th>%</th><th>Atribuibles</th><th>Recibidas</th><th>Anuladas</th></tr></thead><tbody><tr><td>REF-DEMO <span class="tag-fict">FICTICIO</span></td><td>Sí</td><td>10</td><td>${cop(4000)}</td><td>${cop(0)}</td><td>${cop(0)}</td></tr></tbody></table></div><p class="small muted">Las comisiones se generan solo con pagos verificados y se anulan si el pago se reembolsa o reversa.</p>`);
+V["admin-reportes"] = () => adminWrap("admin-reportes", `<div class="table-wrap"><table><thead><tr><th>Mes</th><th>Ventas verificadas</th><th>Renovaciones</th><th>Ingresos</th><th>Reembolsos</th></tr></thead><tbody><tr><td>2026-10 <span class="tag-fict">FICTICIO</span></td><td>2</td><td>1</td><td>${cop(80000)}</td><td>0</td></tr><tr><td>2026-11</td><td>${1 + S.payments.filter((p) => p.status === "approved" && !p.discrepancy).length}</td><td>0</td><td>${cop(40000 * (1 + S.payments.filter((p) => p.status === "approved" && !p.discrepancy).length))}</td><td>0</td></tr></tbody></table></div>
+  <h2 style="font-size:1.2rem;margin-top:20px">Embudo (eventos anónimos con consentimiento)</h2><div class="flow">${["Visitas", "Precio", "Compatibilidad", "Registro", "Inicio de pago", "Pago verificado", "Activación"].map((s) => `<span>${s}</span>`).join("→")}</div><p class="small muted">En producción, el embudo se alimenta de la tabla analytics_events, separada de los registros financieros.</p>`);
+V["admin-configuracion"] = () => adminWrap("admin-configuracion", `<div class="table-wrap"><table><thead><tr><th>Dependencia</th><th>Estado</th><th>Detalle</th></tr></thead><tbody>${DATA.deps.map((d) => `<tr><td><code>${d[0]}</code></td><td><span class="badge ${d[1] ? "badge-ok" : "badge-warn"}">${d[1] ? "Listo" : "Pendiente"}</span></td><td>${esc(d[2])}</td></tr>`).join("")}</tbody></table></div><p class="small muted" style="margin-top:10px">Mientras haya dependencias pendientes, los cobros reales permanecen bloqueados.</p>`);
+
+/* ───────── Acciones ───────── */
+function grantLicense() {
+  if (S.licMode === "sim") { S.lic = { status: "active", until: S.sub.end }; if (S.sub.status !== "revoked") S.sub.status = "active"; S.tasks.forEach((t) => (t.status = "done")); return; }
+  const code = S.licMode === "pending" ? "LICENSE_ADAPTER_PENDING" : "UPSTREAM_ERROR";
+  const t = S.tasks.find((x) => x.status === "open"); if (t) { t.attempts++; t.code = code; } else S.tasks.push({ at: now(), status: "open", attempts: 1, code });
+  if (S.licMode === "error" && S.sub.status === "pending_activation") S.sub.status = "activation_failed";
+}
+let lastEvent = null;
+function pay(kind) {
+  const out = document.getElementById("sec-out");
+  if (kind === "forged") { out.innerHTML = notice("err", "Evento rechazado (HTTP 401)", "La firma SHA-256 no coincide con el secreto de eventos. No se registró ningún pago (A06)."); return; }
+  if (kind === "dup") { out.innerHTML = lastEvent ? notice("info", "Evento duplicado ignorado (HTTP 200)", "Ya se había procesado. No se creó otra vigencia, licencia ni comisión (A05).") : notice("info", null, "Aún no hay un evento previo."); return; }
+  const status = kind === "cheap" ? "approved" : kind;
+  const rec = { at: now(), ref: S.order.ref, amount: kind === "cheap" ? 1000 : 40000, status, discrepancy: kind === "cheap" };
+  const existing = S.payments.find((p) => p.ref === S.order.ref);
+  if (existing && existing.status === "approved") { lastEvent = rec; out.innerHTML = notice("info", "Sin cambios", "Este pedido ya tiene un pago aprobado."); return; }
+  if (existing) Object.assign(existing, rec); else S.payments.unshift(rec);
+  lastEvent = rec;
+  if (kind === "cheap") { S.lastPay = "review"; step("revisión"); location.hash = "pago-resultado"; return; }
+  S.lastPay = status;
+  if (status === "approved") {
+    const cont = S.sub && !["revoked", "expired"].includes(S.sub.status) && S.sub.end > now();
+    const p = nextPeriod(now(), cont ? S.sub.end : null, cont ? S.sub.anchor : null);
+    if (!S.sub || !cont) S.sub = { status: "pending_activation", start: p.start, end: p.end, anchor: p.anchor, cancel: false, periods: [] };
+    else { S.sub.end = p.end; S.sub.cancel = false; }
+    S.sub.periods.push({ start: p.start, end: p.end });
+    S.order.status = "paid"; grantLicense(); step("pago verificado");
+  } else step(status === "pending" ? "pago pendiente" : "pago rechazado");
+  location.hash = "pago-resultado";
+}
+
+/* ───────── Enrutador y eventos ───────── */
+const NAV = [["funciones", "Funciones"], ["compatibilidad", "Compatibilidad"], ["demostracion", "Demostración"], ["precio", "Precio"], ["soporte", "Soporte"]];
+function renderNav(cur) {
+  const nav = document.getElementById("menu-principal");
+  nav.innerHTML = NAV.map(([h, l]) => `<a href="#${h}" ${h === cur ? 'aria-current="page"' : ""}>${l}</a>`).join("") +
+    (isStaff() ? `<a href="#admin">Administración</a>` : "") +
+    (logged() ? `<a href="#cuenta" class="btn btn-ghost">Mi cuenta</a>` : `<a href="#ingreso">Ingresar</a><a href="#precio" class="btn btn-primary">Suscribirme</a>`);
+}
+function render() {
+  let h = (location.hash || "#inicio").slice(1) || "inicio";
+  let view;
+  if (h === "legal") view = V.legal("terminos");
+  else if (h.startsWith("legal-")) view = V.legal(h.slice(6));
+  else view = (V[h] ?? V.inicio)();
+  const main = document.getElementById("contenido-principal");
+  main.innerHTML = view;
+  renderNav(h);
+  document.getElementById("menu-principal").dataset.open = "false";
+  document.getElementById("sim-now").textContent = fDate(now());
+  document.getElementById("sim-flow").textContent = S.path.length ? (S.path.length > 4 ? "… → " : "") + S.path.slice(-4).join(" → ") : "sin acciones";
+  document.getElementById("sim-session").value = S.session;
+  document.getElementById("sim-env").value = S.envOk ? "1" : "0";
+  document.getElementById("sim-lic").value = S.licMode;
+  window.scrollTo(0, 0);
+  S.msg = null;
+}
+function login(role) {
+  S.session = role;
+  if (!S.user) S.user = { name: role === "client" ? "Instructora de prueba" : `Usuario ${role}`, email: `${role}@ejemplo.invalid` };
+}
+document.addEventListener("submit", (e) => {
+  const f = e.target; e.preventDefault();
+  if (f.id === "elig-form") { const v = Object.fromEntries(new FormData(f)); S.elig = classify(v, S.envOk); step("compatibilidad: " + S.elig[0]); render(); }
+  if (f.id === "reg-form") {
+    const err = document.getElementById("reg-err"); const p = document.getElementById("r-pass").value;
+    const probs = [];
+    if (document.getElementById("r-name").value.trim().length < 2) probs.push("Escribe tu nombre.");
+    if (!/^\S+@\S+\.\S+$/.test(document.getElementById("r-email").value)) probs.push("Correo no válido.");
+    if (p.length < 10 || !/[A-Za-z]/.test(p) || !/\d/.test(p)) probs.push("La contraseña necesita 10 caracteres con letras y números.");
+    if (!document.getElementById("r-terms").checked || !document.getElementById("r-priv").checked) probs.push("Debes aceptar los términos y el aviso de privacidad.");
+    if (probs.length) { err.hidden = false; err.textContent = probs.join(" "); return; }
+    S.user = { name: document.getElementById("r-name").value.trim(), email: document.getElementById("r-email").value.trim() };
+    S.marketing = document.getElementById("r-mk").checked; S.regDone = true; step("registro"); render();
+  }
+  if (f.id === "login-form") {
+    if (document.getElementById("l-pass").value.length < 10) { const er = document.getElementById("login-err"); er.hidden = false; er.textContent = "Correo o contraseña incorrectos."; return; }
+    login("client"); step("ingreso"); location.hash = "cuenta";
+  }
+  if (f.id === "rec-form") document.getElementById("rec-box").innerHTML = `<p role="status">Si el correo corresponde a una cuenta, recibirás un enlace para restablecer tu contraseña. El enlace vence en una hora.</p>`;
+  if (f.id === "checkout-form") {
+    if (!document.getElementById("c-terms").checked || !document.getElementById("c-desk").checked) { const er = document.getElementById("c-err"); er.hidden = false; er.textContent = "Debes aceptar las condiciones y confirmar el requisito de computador."; return; }
+    if (!S.order || S.order.status !== "pending_payment") S.order = { ref: ref(), status: "pending_payment" };
+    step("pedido creado"); location.hash = "pasarela";
+  }
+  if (f.id === "prof-form") {
+    S.user.name = document.getElementById("p-name").value.trim() || S.user.name;
+    const want = document.getElementById("p-mk").checked;
+    S.msg = want === S.marketing ? "Cambios guardados." : want ? "Cambios guardados. Autorizaste comunicaciones comerciales." : "Cambios guardados. Retiraste el consentimiento comercial: no recibirás más promociones.";
+    S.marketing = want; render();
+  }
+  if (f.id === "sup-form") {
+    const d = document.getElementById("s-desc").value.trim(); const er = document.getElementById("s-err");
+    if (d.length < 10) { er.hidden = false; er.textContent = "Describe el problema con al menos 10 caracteres."; return; }
+    if (/contrase(ñ|n)a\s*[:=]/i.test(d)) { er.hidden = false; er.textContent = "No incluyas contraseñas en la solicitud."; return; }
+    S.support.unshift({ at: now(), cat: document.getElementById("s-cat").value, desc: d, status: "abierta" }); step("soporte"); render();
+  }
+  if (f.id === "manual-form") {
+    const out = document.getElementById("m-out"); const amt = Number(document.getElementById("m-amt").value);
+    const note = document.getElementById("m-note").value.trim(); const ext = document.getElementById("m-ext").value.trim();
+    if (!/^LUR-\d{8}-[A-Z0-9]{10}$/.test(document.getElementById("m-ref").value.trim())) { out.className = "error"; out.textContent = "Referencia de pedido inválida."; return; }
+    if (ext.length < 4 || note.length < 10) { out.className = "error"; out.textContent = "Se requiere la referencia de Nequi y una evidencia de verificación (mínimo 10 caracteres)."; return; }
+    if (amt !== 40000) { out.className = "error"; out.textContent = "El valor no coincide con el pedido: queda como discrepancia y no habilita acceso."; return; }
+    out.className = ""; out.textContent = "Pago manual registrado con evidencia y auditoría (simulado).";
+  }
+});
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button, a"); if (!t) return;
+  if (t.dataset.pay) pay(t.dataset.pay);
+  if (t.dataset.retry !== undefined) { grantLicense(); render(); }
+  if (t.id === "confirm-email") { S.regDone = false; login("client"); step("correo confirmado"); location.hash = "cuenta"; }
+  if (t.id === "logout") { S.session = "out"; location.hash = "inicio"; render(); }
+  if (t.id === "cancel-ask") document.getElementById("cancel-box").innerHTML = `<div class="notice notice-warn" role="alertdialog" aria-labelledby="cc-t"><strong id="cc-t">¿Cancelar las renovaciones?</strong><p>Conservarás el acceso hasta el ${fDate(S.sub.end)}. Después no se renovará.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-danger" id="cancel-yes">Sí, cancelar renovaciones</button><button class="btn btn-ghost" id="cancel-no">Volver</button></div></div>`;
+  if (t.id === "cancel-yes") { S.sub.cancel = true; S.msg = "Cancelaste los cobros futuros. Tu acceso sigue hasta el fin del período pagado."; step("cancelación"); render(); }
+  if (t.id === "cancel-no") render();
+  if (t.id === "resume") { S.sub.cancel = false; render(); }
+  if (t.id === "nav-toggle") { const n = document.getElementById("menu-principal"); const o = n.dataset.open !== "true"; n.dataset.open = String(o); t.setAttribute("aria-expanded", String(o)); }
+  if (t.id === "toggle-sim") { const p = document.getElementById("sim-panel"); p.hidden = !p.hidden; t.setAttribute("aria-expanded", String(!p.hidden)); }
+  if (t.id === "sim-time") { S.days += 10; if (S.sub && S.sub.end <= now() && S.sub.status !== "revoked") { S.sub.status = "expired"; if (S.lic) S.lic.status = "expired"; step("vencimiento"); } render(); }
+  if (t.id === "sim-reset") { S = fresh(); location.hash = "inicio"; render(); }
+});
+document.getElementById("sim-session").addEventListener("change", (e) => { const v = e.target.value; if (v === "out") S.session = "out"; else login(v); location.hash = v === "out" ? "inicio" : v === "client" ? "cuenta" : "admin"; render(); });
+document.getElementById("sim-env").addEventListener("change", (e) => { S.envOk = e.target.value === "1"; S.elig = null; render(); });
+document.getElementById("sim-lic").addEventListener("change", (e) => { S.licMode = e.target.value; render(); });
+window.addEventListener("hashchange", render);
+document.getElementById("footer-legal").innerHTML = DATA.legal.map((d) => `<a href="#legal-${d.slug}">${esc(d.title)}</a>`).join("");
+document.getElementById("independence").textContent = DATA.independence;
+if (window.matchMedia("(max-width: 700px)").matches) { document.getElementById("sim-panel").hidden = true; document.getElementById("toggle-sim").setAttribute("aria-expanded", "false"); }
+render();
+</script>
+</body>
+</html>

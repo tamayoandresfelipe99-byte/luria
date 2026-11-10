@@ -1,0 +1,28 @@
+· migración 20261110000100_schema.sql
+· migración 20261110000200_rls.sql
+· migración 20261110000300_functions.sql
+· migración 20261110000400_seed.sql
+▶ Perfil creado automáticamente al registrarse
+▶ A04 · El precio lo define el servidor (trigger)
+▶ Pedido idempotente y único pendiente por cliente
+▶ A03 · Pago aprobado registra una única vigencia · A05 duplicado
+▶ A05 · Evento duplicado deduplicado
+▶ A07 · Eventos fuera de orden
+▶ A09 · Fallo de licencia → tarea auditable (idempotente)
+▶ A13 · Renovación anticipada extiende sin duplicar ni perder días
+▶ A21 · Fin de mes y año bisiesto (ancla 31)
+▶ A04 · Importe distinto al pedido no habilita nada
+▶ Pago manual exige administrador, evidencia y referencia única
+▶ A14 · Reembolso revoca y anula comisión
+▶ A11 · Vencimiento por tarea programada
+▶ Auditoría inmutable
+▶ Funciones verificadas no publicables sin evidencia
+▶ A10 · Cliente B no ve pedidos, pagos ni suscripción del cliente A
+▶ Cliente no puede escribir pedidos, pagos, suscripciones ni licencias
+▶ Cliente solo puede editar nombre y teléfono propios
+▶ Soporte: crea solicitudes propias y no puede autoasignarse estado
+▶ Cancelar renovación (A12): conserva la vigencia
+▶ Comercial: ve ventas y atribución, no eventos técnicos ni auditoría
+▶ Admin: ve auditoría y eventos
+▶ Anónimo: solo catálogo público
+✔ Todas las pruebas SQL pasaron
