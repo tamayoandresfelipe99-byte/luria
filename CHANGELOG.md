@@ -1,5 +1,25 @@
 # Registro de cambios
 
+## v0.2.0 · 11-nov-2026
+
+### Corregido
+- **Toda compra fallaba en Supabase**: `fn_create_order` usa `gen_random_bytes` (pgcrypto), que en Supabase vive en el esquema `extensions`, fuera de su `search_path`. Migración `20261111000100`. No se veía en las pruebas con PostgreSQL simple.
+- Confirmación de correo y recuperación de contraseña no funcionaban con las plantillas por defecto de Supabase: se añaden plantillas en español con `token_hash` (`supabase/templates/`) y `/auth/confirmar` acepta además el flujo `?code=`.
+- Accesibilidad (axe, WCAG 2.2 AA): contraste del texto secundario y de la etiqueta del inicio, tamaño de los enlaces legales del pie, aviso de prototipo dentro de una región y jerarquía de encabezados en `/funciones`. Sin cambios visuales apreciables.
+
+### Añadido
+- Límite de solicitudes compartido entre instancias (tabla `rate_limits`, claves con SHA-256, limpieza diaria). Migración `20261111000300`.
+- Eventos `activation_done` y `renewal_done` emitidos por la base de datos. Migración `20261111000200`.
+- Configuración de Supabase local (`supabase/config.toml`), scripts `db:start`, `db:stop` y `test:e2e`, y prueba de punta a punta `scripts/e2e-local.mjs` (31 comprobaciones).
+- Pruebas SQL del embudo y del límite compartido (`supabase/tests/30_embudo_y_limites.sql`).
+
+### Cambiado
+- `zod` 3 → 4.6 (corrige GHSA-mrhx-c7xc-m3w5; `npm audit` sin vulnerabilidades).
+- Se elimina el script `lint` (`next lint` ya no existe en Next.js 16).
+
+### Migraciones necesarias
+`20261111000100_fix_pgcrypto_search_path.sql`, `20261111000200_analytics_activation_renewal.sql`, `20261111000300_rate_limits.sql`, en orden, después de las de v0.1.0.
+
 ## v0.1.1 · 10-nov-2026
 
 ### Corregido

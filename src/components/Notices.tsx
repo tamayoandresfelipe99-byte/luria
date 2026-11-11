@@ -20,9 +20,9 @@ export function DesktopNotice() {
 
 export function SimulationBanner() {
   return (
-    <div className="sim-banner" role="note">
+    <aside className="sim-banner" aria-label="Modo prototipo">
       MODO PROTOTIPO · Pagos y licencias simulados. Ninguna transacción es real y no se concede acceso a la extensión.
-    </div>
+    </aside>
   );
 }
 

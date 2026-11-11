@@ -4,7 +4,7 @@ import { appConfig, paymentProvider } from "@/lib/services/factory";
 import { realChargesEnabled, simulationAllowed } from "@/lib/config";
 import { purchaseGate } from "@/lib/domain/access";
 import { createOrderSchema } from "@/lib/validation";
-import { json, rateLimit, sameOrigin } from "@/lib/security/request";
+import { json, rateLimitShared, sameOrigin } from "@/lib/security/request";
 import { loadCustomerView } from "@/lib/services/customer";
 
 /** Crea (o reutiliza) el pedido y devuelve la URL de la pasarela. El precio sale de la base de datos. */
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   const sb = await supabaseServer();
   const { data: auth } = await sb.auth.getUser();
   if (!auth.user) return json({ error: "Inicia sesión" }, 401);
-  if (!rateLimit(`compra:${auth.user.id}`, 6, 10 * 60_000)) return json({ error: "Demasiados intentos" }, 429);
+  if (!(await rateLimitShared(`compra:${auth.user.id}`, 6, 10 * 60_000))) return json({ error: "Demasiados intentos" }, 429);
 
   const parsed = createOrderSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return json({ error: "Solicitud inválida" }, 400); // A04: rechaza campos extra (amount, price…)

@@ -16,5 +16,13 @@ export async function GET(req: NextRequest) {
     const { error } = await sb.auth.verifyOtp({ token_hash, type });
     if (!error) return NextResponse.redirect(new URL(dest, url.origin));
   }
+  // Respaldo: plantillas por defecto de Supabase (flujo PKCE, `?code=`). Solo funciona en el
+  // mismo navegador donde se pidió el enlace; por eso las plantillas recomendadas usan token_hash.
+  const code = url.searchParams.get("code");
+  if (code) {
+    const sb = await supabaseServer();
+    const { error } = await sb.auth.exchangeCodeForSession(code);
+    if (!error) return NextResponse.redirect(new URL(dest, url.origin));
+  }
   return NextResponse.redirect(new URL("/ingreso?aviso=enlace-invalido", url.origin));
 }

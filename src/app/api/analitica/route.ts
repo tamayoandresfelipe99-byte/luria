@@ -1,11 +1,11 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ANALYTICS_EVENTS, ACQUISITION_CHANNELS, sanitizePath } from "@/lib/analytics/events";
-import { clientIp, rateLimit } from "@/lib/security/request";
+import { clientIp, rateLimitShared } from "@/lib/security/request";
 
 /** Eventos de navegación (solo con consentimiento; lo verifica el cliente y aquí la cookie). Sin datos personales. */
 export async function POST(req: Request) {
   if (!req.headers.get("cookie")?.includes("luria_analytics=granted")) return new Response(null, { status: 204 });
-  if (!rateLimit(`an:${clientIp(req)}`, 120, 60_000)) return new Response(null, { status: 204 });
+  if (!(await rateLimitShared(`an:${clientIp(req)}`, 120, 60_000))) return new Response(null, { status: 204 });
   const b = (await req.json().catch(() => null)) as { event?: string; anonId?: string; path?: string; channel?: string } | null;
   // Los eventos financieros (payment_verified, activation_done…) solo los emite el servidor.
   const allowedFromClient = ["page_view", "pricing_view", "compat_check", "signup_start", "signup_done", "checkout_start"];

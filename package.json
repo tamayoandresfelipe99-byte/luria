@@ -1,16 +1,18 @@
 {
   "name": "luria-web",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "description": "Plataforma web comercial de LURIA: información, registro, suscripciones, pagos, activación y administración.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:sql": "bash scripts/test-sql.sh",
+    "test:e2e": "node scripts/e2e-local.mjs",
+    "db:start": "npx -y supabase@2 start -x imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,studio",
+    "db:stop": "npx -y supabase@2 stop",
     "prototype:build": "tsx scripts/build-prototype.ts",
     "keys:license": "tsx scripts/generate-license-keys.ts"
   },
@@ -21,7 +23,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "server-only": "^0.0.1",
-    "zod": "^3.25.0"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

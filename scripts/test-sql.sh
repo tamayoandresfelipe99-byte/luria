@@ -28,3 +28,5 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
 done
 "${PSQL[@]}" -f "$ROOT/supabase/tests/10_acceptance.sql"
 "${PSQL[@]}" -f "$ROOT/supabase/tests/20_rls.sql"
+"${PSQL[@]}" -f "$ROOT/supabase/tests/30_embudo_y_limites.sql"
+echo "✔ Todas las pruebas SQL pasaron"

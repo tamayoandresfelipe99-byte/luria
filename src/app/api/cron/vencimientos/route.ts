@@ -21,5 +21,7 @@ export async function GET(req: Request) {
     const res = await licenseAdapter().revoke({ externalLicenseId: r.external_license_id, reason: "expired", idempotencyKey: `expire:${r.subscription_id}:${new Date().toISOString().slice(0, 10)}` });
     if (res.ok) revoked++;
   }
-  return Response.json({ expired: rows.length, revoked });
+  // Limpieza del límite de solicitudes compartido (claves inactivas > 1 día). No bloquea la tarea.
+  const { data: cleaned } = await supabaseAdmin().rpc("fn_rate_limit_cleanup");
+  return Response.json({ expired: rows.length, revoked, rateLimitKeysCleaned: typeof cleaned === "number" ? cleaned : 0 });
 }

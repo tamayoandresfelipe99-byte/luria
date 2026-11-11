@@ -91,7 +91,7 @@ Costo fijo aproximado: **45 USD/mes** más comisiones. Con 30 clientes, las comi
 
 ## 5. Límites y escalabilidad
 
-- **Límite de solicitudes en memoria** (`src/lib/security/request.ts`): suficiente con una instancia. Con varias instancias, sustituir por una tabla en Postgres o un Redis gestionado.
+- **Límite de solicitudes compartido** (`rateLimitShared` en `src/lib/security/request.ts`, tabla `rate_limits`, función `fn_rate_limit_hit`): ventana fija por clave resumida con SHA-256, común a todas las instancias. Si la base de datos no responde, usa el límite en memoria de la instancia. Las claves inactivas se limpian en la tarea diaria de vencimientos.
 - **Proveedor simulado**: guarda transacciones en memoria; solo funciona en `next dev` (un proceso).
 - **Escala esperada**: cientos o pocos miles de suscriptores caben holgadamente en Supabase Pro. Los cuellos de botella previsibles son el soporte humano y la activación manual, no la infraestructura.
 - **Tareas programadas**: un cron diario (`vercel.json`, 05:00 hora de Colombia) expira pedidos y suscripciones y revoca licencias.

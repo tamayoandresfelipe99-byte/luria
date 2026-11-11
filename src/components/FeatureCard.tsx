@@ -4,19 +4,22 @@ import { FeatureStatusBadge } from "./Badges";
 
 export function FeatureCard({ f, detailed = false }: { f: Feature; detailed?: boolean }) {
   const disclaimer = claimDisclaimer(f);
+  // En /funciones las tarjetas van justo debajo del h1; en el inicio, debajo de un h2.
+  const Title = detailed ? "h2" : "h3";
+  const Sub = detailed ? "h3" : "h4";
   return (
     <article className="card" id={f.id} aria-labelledby={`${f.id}-t`}>
       <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", marginBottom: 10 }}>
         <span className="feature-num" aria-hidden="true">{f.order}</span>
         <FeatureStatusBadge status={f.status} />
       </div>
-      <h3 id={`${f.id}-t`}>{f.name}</h3>
+      <Title id={`${f.id}-t`} className="feature-title">{f.name}</Title>
       <p className="muted">{f.summary}</p>
       {detailed && (
         <>
-          <h4>Qué problema aborda</h4>
+          <Sub className="feature-sub">Qué problema aborda</Sub>
           <p>{f.problem}</p>
-          <h4>Qué hace</h4>
+          <Sub className="feature-sub">Qué hace</Sub>
         </>
       )}
       <ul className="check-list">
@@ -28,11 +31,11 @@ export function FeatureCard({ f, detailed = false }: { f: Feature; detailed?: bo
       {detailed && (
         <div className="grid grid-2" style={{ marginTop: 16 }}>
           <div>
-            <h4>Requisitos</h4>
+            <Sub className="feature-sub">Requisitos</Sub>
             <ul>{f.requirements.map((r) => <li key={r}>{r}</li>)}</ul>
           </div>
           <div>
-            <h4>Limitaciones</h4>
+            <Sub className="feature-sub">Limitaciones</Sub>
             <ul>{f.limitations.map((r) => <li key={r}>{r}</li>)}</ul>
           </div>
         </div>

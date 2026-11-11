@@ -21,8 +21,8 @@ export const registerSchema = z
       .regex(/^\+?57?\s?3\d{9}$/, "Celular colombiano no válido")
       .optional()
       .or(z.literal("")),
-    acceptTerms: z.literal("on", { errorMap: () => ({ message: "Debes aceptar los términos" }) }),
-    acceptPrivacy: z.literal("on", { errorMap: () => ({ message: "Debes aceptar el aviso de privacidad" }) }),
+    acceptTerms: z.literal("on", { error: "Debes aceptar los términos" }),
+    acceptPrivacy: z.literal("on", { error: "Debes aceptar el aviso de privacidad" }),
     marketing: z.literal("on").optional(),
   })
   .strict();

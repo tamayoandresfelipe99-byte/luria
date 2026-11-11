@@ -5,9 +5,9 @@
 ## 1. Supabase
 
 1. Crear dos proyectos: `luria-staging` y `luria-prod`. Para producción, plan Pro: el gratuito se pausa.
-2. Aplicar las migraciones en orden: `supabase db push` con la CLI vinculada, o pegarlas en el editor SQL.
+2. Aplicar las migraciones en orden (7 archivos en `supabase/migrations/`): `npx supabase@2 db push` con la CLI vinculada, o pegarlas en el editor SQL. Ya se verificaron en Supabase local con Postgres 17.
 3. En Auth → URL Configuration: Site URL = dominio; Redirect URLs = `https://DOMINIO/auth/confirmar`.
-4. En Auth → Email Templates, usar enlaces con `token_hash`:
+4. En Auth → Email Templates, usar enlaces con `token_hash`. Las plantillas listas en español están en `supabase/templates/confirmacion.html` y `recuperacion.html` (copiar su contenido). Sin este paso, los enlaces de las plantillas por defecto solo funcionan en el mismo navegador donde se pidió el correo:
    - Confirmación: `{{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&type=signup`
    - Recuperación: `{{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&type=recovery&siguiente=/restablecer`
 5. Auth → caducidad de OTP/enlaces: 3600 s. Activar la protección de contraseñas filtradas si el plan la ofrece.

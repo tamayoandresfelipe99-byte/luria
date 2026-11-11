@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { loginSchema, recoverSchema, registerSchema } from "@/lib/validation";
-import { rateLimit } from "@/lib/security/request";
+import { rateLimitShared } from "@/lib/security/request";
 import { appConfig } from "@/lib/services/factory";
 import { loginErrorMessage, recoverAccountMessage, registerDoneMessage } from "@/lib/services/auth-messages";
 import { NOTICE_VERSIONS } from "@/lib/content/site";
@@ -27,7 +27,7 @@ function safeNext(v: FormDataEntryValue | null, fallback = "/cuenta") {
 }
 
 export async function registerAction(_: FormState, fd: FormData): Promise<FormState> {
-  if (!rateLimit(`reg:${await ip()}`, 5, 15 * 60_000)) return { message: "Demasiados intentos. Espera unos minutos." };
+  if (!(await rateLimitShared(`reg:${await ip()}`, 5, 15 * 60_000))) return { message: "Demasiados intentos. Espera unos minutos." };
   const raw = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith("$")));
   const parsed = registerSchema.safeParse(raw);
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors, message: "Revisa los campos marcados." };
@@ -66,7 +66,7 @@ export async function registerAction(_: FormState, fd: FormData): Promise<FormSt
 
 export async function loginAction(_: FormState, fd: FormData): Promise<FormState> {
   const email = String(fd.get("email") ?? "").toLowerCase();
-  if (!rateLimit(`login:${await ip()}`, 10, 15 * 60_000) || !rateLimit(`login:${email}`, 5, 15 * 60_000))
+  if (!(await rateLimitShared(`login:${await ip()}`, 10, 15 * 60_000)) || !(await rateLimitShared(`login:${email}`, 5, 15 * 60_000)))
     return { message: "Demasiados intentos. Espera unos minutos o recupera tu acceso." };
   const parsed = loginSchema.safeParse({ email, password: fd.get("password") });
   if (!parsed.success) return { message: loginErrorMessage() };
@@ -77,7 +77,7 @@ export async function loginAction(_: FormState, fd: FormData): Promise<FormState
 }
 
 export async function recoverAction(_: FormState, fd: FormData): Promise<FormState> {
-  if (!rateLimit(`rec:${await ip()}`, 5, 15 * 60_000)) return { ok: true, message: recoverAccountMessage(false) };
+  if (!(await rateLimitShared(`rec:${await ip()}`, 5, 15 * 60_000))) return { ok: true, message: recoverAccountMessage(false) };
   const parsed = recoverSchema.safeParse({ email: fd.get("email") });
   if (parsed.success) {
     const sb = await supabaseServer();

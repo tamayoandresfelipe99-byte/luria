@@ -2,7 +2,7 @@
 
 Sitio comercial y sistema de suscripciones de **LURIA**, extensión de Google Chrome para instructores que imparten formación virtual en un entorno compatible (ZAJUNA).
 
-> **Estado: v0.1.1 · Fase A (prototipo funcional) con base técnica de Fase B.**
+> **Estado: v0.2.0 · Fase A (prototipo funcional) con base técnica de Fase B.**
 > Los cobros reales están **bloqueados por diseño** hasta resolver las dependencias de `docs/12-matriz-dependencias.md`.
 > LURIA no tiene relación comercial ni institucional con el SENA.
 
@@ -28,13 +28,31 @@ Sitio comercial y sistema de suscripciones de **LURIA**, extensión de Google Ch
 
 ## Ejecución local
 
+### Opción A · Supabase local (sin cuenta, requiere Docker)
+
 ```bash
 npm install
-cp .env.example .env.local        # completa NEXT_PUBLIC_SUPABASE_URL, ANON_KEY y SERVICE_ROLE_KEY
-# Aplica las migraciones en orden (Supabase CLI o editor SQL):
-#   supabase/migrations/20261110000100_schema.sql … 20261110000400_seed.sql
-npm run dev                        # http://localhost:3000
+npm run db:start                   # levanta Supabase local y aplica las migraciones
+cp .env.example .env.local
 ```
+
+Completa `.env.local` con los valores que imprime `npm run db:start`:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<ANON_KEY>
+SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY>
+PAYMENT_PROVIDER=mock
+LICENSE_ADAPTER=simulated
+SUPPORTED_ENVIRONMENTS_VERIFIED=true   # solo local: sin esto la compra queda bloqueada (A15)
+CRON_SECRET=<cualquier texto largo>
+```
+
+Luego `npm run dev` (http://localhost:3000). Los correos de confirmación y recuperación llegan al buzón de pruebas en http://127.0.0.1:54324.
+
+### Opción B · Proyecto de Supabase alojado
+
+Aplica las migraciones de `supabase/migrations/` en orden (`npx supabase@2 db push` o editor SQL), configura las plantillas de `supabase/templates/` y sigue `docs/08-despliegue.md`.
 
 Con `PAYMENT_PROVIDER=mock` y `LICENSE_ADAPTER=simulated` puedes recorrer el flujo completo. El simulador de pagos (`/compra/simulador`) firma eventos con el mismo formato de Wompi. En producción responde 404 y la aplicación **no arranca** si detecta piezas simuladas.
 
@@ -48,7 +66,8 @@ insert into public.staff_roles (user_id, role) select id, 'admin' from auth.user
 
 ```bash
 npm test            # 30 pruebas de dominio, pagos, licencias y contenido (A01–A22, F01–F06)
-npm run test:sql    # migraciones + 23 bloques de pruebas sobre PostgreSQL temporal (RLS, idempotencia, fechas)
+npm run test:sql    # migraciones + 26 bloques de pruebas sobre PostgreSQL temporal (RLS, idempotencia, fechas, embudo, límites)
+npm run test:e2e    # 31 comprobaciones de punta a punta contra Supabase local + `npm run dev` (Opción A)
 npm run typecheck   # TypeScript estricto
 node scripts/check-prototype.mjs   # 24 comprobaciones del prototipo (requiere Playwright)
 ```

@@ -1,4 +1,6 @@
 import "server-only";
+import { createHash } from "node:crypto";
+import { supabaseAdmin } from "../supabase/admin";
 
 /**
  * Protección CSRF para rutas API que cambian estado: el encabezado Origin debe coincidir
@@ -17,8 +19,7 @@ export function sameOrigin(req: Request, appUrl: string): boolean {
 
 /**
  * Límite de solicitudes en memoria por instancia (ventana deslizante simple).
- * SUFICIENTE PARA PROTOTIPO. En producción con varias instancias, sustituir por un
- * almacén compartido (p. ej. tabla en Postgres o Redis gestionado). Ver docs/seguridad.md.
+ * Respaldo de `rateLimitShared` cuando la base de datos no responde, y suficiente para pruebas.
  */
 const buckets = new Map<string, number[]>();
 export function rateLimit(key: string, max: number, windowMs: number, now = Date.now()): boolean {
@@ -30,6 +31,29 @@ export function rateLimit(key: string, max: number, windowMs: number, now = Date
   arr.push(now);
   buckets.set(key, arr);
   return true;
+}
+
+/** Resumen SHA-256 de la clave: la base de datos nunca guarda IP, correo ni ids en claro. */
+export function rateLimitKeyHash(key: string): string {
+  return createHash("sha256").update(`luria-rl:${key}`).digest("hex");
+}
+
+/**
+ * Límite compartido entre instancias (tabla `rate_limits`, función `fn_rate_limit_hit`).
+ * Si la base de datos falla, usa el límite en memoria: proteger sin bloquear el negocio.
+ */
+export async function rateLimitShared(key: string, max: number, windowMs: number): Promise<boolean> {
+  try {
+    const { data, error } = await supabaseAdmin().rpc("fn_rate_limit_hit", {
+      p_key_hash: rateLimitKeyHash(key),
+      p_max: max,
+      p_window_seconds: Math.max(1, Math.round(windowMs / 1000)),
+    });
+    if (error || typeof data !== "boolean") throw error ?? new Error("respuesta inesperada");
+    return data;
+  } catch {
+    return rateLimit(key, max, windowMs);
+  }
 }
 
 export function clientIp(req: Request): string {

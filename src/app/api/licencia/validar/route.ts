@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { appConfig } from "@/lib/services/factory";
 import { issueLicenseToken } from "@/lib/licensing/token";
-import { json, rateLimit } from "@/lib/security/request";
+import { json, rateLimitShared } from "@/lib/security/request";
 
 /**
  * OPCIÓN B (propuesta, inactiva hasta que la extensión la adopte; requiere LICENSE_TOKEN_PRIVATE_KEY).
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
   const { data: auth } = await anon.auth.getUser(bearer);
   if (!auth.user) return json({ error: "No autenticado" }, 401);
-  if (!rateLimit(`lic:${auth.user.id}`, 30, 60 * 60_000)) return json({ error: "Demasiadas solicitudes" }, 429);
+  if (!(await rateLimitShared(`lic:${auth.user.id}`, 30, 60 * 60_000))) return json({ error: "Demasiadas solicitudes" }, 429);
   const db = supabaseAdmin();
   const [{ data: lic }, { data: prof }] = await Promise.all([
     db.from("licenses").select("id, status, valid_until").eq("user_id", auth.user.id).maybeSingle(),

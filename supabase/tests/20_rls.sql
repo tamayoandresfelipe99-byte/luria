@@ -115,4 +115,3 @@ begin
   assert ok, 'anónimo no puede leer pedidos';
 end $$;
 reset role;
-\echo '✔ Todas las pruebas SQL pasaron'

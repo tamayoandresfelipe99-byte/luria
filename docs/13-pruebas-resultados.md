@@ -80,3 +80,27 @@ npx playwright install chromium && npm run prototype:build && node scripts/check
 `next build` reescribió `tsconfig.json` (`jsx: react-jsx`, inclusión de `.next/dev/types`) y `next-env.d.ts`, como exige Next.js 16.
 
 **Sigue sin probarse:** Supabase real (Auth, correos, RLS en la plataforma), sandbox de Wompi y la API de licencias; requieren cuentas y llaves del propietario.
+
+
+## Anexo 2 · v0.2.0 contra Supabase local (11-nov-2026, Claude Code)
+
+**Entorno:** Supabase CLI 2.122 con Docker (Postgres 17.11 de Supabase, GoTrue 2.197, PostgREST 16.5, Mailpit), Next.js 16.4.6 en `next dev`, `PAYMENT_PROVIDER=mock`, `LICENSE_ADAPTER=simulated`, Chromium de Playwright.
+
+| Suite | Resultado |
+|---|---|
+| `npx supabase@2 db reset` (7 migraciones desde cero) | Sin errores |
+| `npm run test:e2e` | **31/31** (registro, correo de confirmación, ingreso, A01, A02, A03, A04 ×2, A10 con RLS real, A12, A15, A16, compra simulada, licencia, cuenta, panel admin de 8 secciones, cron, recuperación y cambio de contraseña, límite compartido, sin errores de JavaScript) |
+| `npm run test:sql` | **26/26** bloques (3 nuevos: embudo, límite compartido, permisos del límite) |
+| `npm test` · `npm run typecheck` · `npm run build` | 30/30 · 0 errores · 34 páginas |
+| `node scripts/check-prototype.mjs` | 24/24 |
+| axe-core 4.10 (WCAG 2.0–2.2 A/AA + buenas prácticas), 12 páginas, 1280 px y 375 px | **0 violaciones** (antes: contraste, tamaño de objetivo, región y orden de encabezados) |
+| `npm audit` | 0 vulnerabilidades |
+| A19 sobre el bundle | 0 coincidencias |
+
+### Fallos encontrados que las pruebas anteriores no detectaban
+
+1. **Toda compra fallaba en Supabase** con `function gen_random_bytes(integer) does not exist`: pgcrypto está en el esquema `extensions`. Corregido (migración `20261111000100`).
+2. **Los enlaces de confirmación y recuperación no funcionaban** con las plantillas por defecto (flujo PKCE, `?code=`). Corregido con plantillas `token_hash` y soporte de `?code=`.
+3. El límite de correos de Supabase (2 por hora con el SMTP incluido) bloquea registros con muy poco tráfico: ver `14-limitaciones.md` #16.
+
+**Sigue sin probarse:** proyecto Supabase alojado, sandbox de Wompi, API de licencias de la extensión y lector de pantalla.

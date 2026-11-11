@@ -19,7 +19,7 @@ Primera parte y sin terceros: tabla `analytics_events`, alimentada por `/api/ana
 |---|---|
 | page_view, pricing_view, compat_check, signup_start, signup_done, checkout_start | Navegador (solo con consentimiento) |
 | payment_verified (webhook), cancellation (cuenta) | Solo servidor (el navegador no puede emitirlos) |
-| activation_done, renewal_done | Definidos en la taxonomía y en la base; emisión pendiente (Fase C) |
+| activation_done, renewal_done | Emitidos por la base de datos (migración `20261111000200`): `activation_done` en la primera activación de la licencia de una suscripción; `renewal_done` en cada vigencia pagada después de la primera. Sin datos personales |
 
 - Identificador anónimo aleatorio (UUID en `localStorage`), sin correo, nombre, teléfono ni referencia de pedido.
 - `path` sin parámetros; la base rechaza rutas con `@`.
