@@ -229,7 +229,7 @@ V.registro = () => S.regDone
     <p class="error" role="alert" id="reg-err" hidden></p>
     <div class="field"><label for="r-name">Nombre completo</label><input id="r-name" name="name" type="text" autocomplete="name" value="Instructora de prueba"></div>
     <div class="field"><label for="r-email">Correo electrónico</label><input id="r-email" name="email" type="email" autocomplete="email" value="instructora@ejemplo.invalid"><span class="hint">Usa un correo personal. No uses credenciales institucionales.</span></div>
-    <div class="field"><label for="r-pass">Contraseña</label><input id="r-pass" name="password" type="password" autocomplete="new-password"><span class="hint">Mínimo 10 caracteres, con letras y números. No uses tu contraseña de ZAJUNA.</span></div>
+    <div class="field"><label for="r-pass">Contraseña</label><input id="r-pass" name="password" type="password" autocomplete="new-password"><span class="hint">Mínimo 15 caracteres. Puedes usar una frase, por ejemplo cuatro palabras. No uses tu contraseña de ZAJUNA.</span></div>
     <div class="field"><label for="r-phone">Celular (opcional)</label><input id="r-phone" name="phone" type="tel" placeholder="3001234567"></div>
     <label class="checkbox"><input type="checkbox" id="r-terms" name="terms"> <span>Acepto los <a href="#legal-terminos">términos y condiciones</a>.</span></label>
     <label class="checkbox"><input type="checkbox" id="r-priv" name="privacy"> <span>Leí y acepto el <a href="#legal-privacidad">aviso de privacidad y tratamiento de datos</a>.</span></label>
@@ -448,7 +448,7 @@ document.addEventListener("submit", (e) => {
     const probs = [];
     if (document.getElementById("r-name").value.trim().length < 2) probs.push("Escribe tu nombre.");
     if (!/^\S+@\S+\.\S+$/.test(document.getElementById("r-email").value)) probs.push("Correo no válido.");
-    if (p.length < 10 || !/[A-Za-z]/.test(p) || !/\d/.test(p)) probs.push("La contraseña necesita 10 caracteres con letras y números.");
+    if (p.length < 15) probs.push("Usa al menos 15 caracteres.");
     if (!document.getElementById("r-terms").checked || !document.getElementById("r-priv").checked) probs.push("Debes aceptar los términos y el aviso de privacidad.");
     if (probs.length) { err.hidden = false; err.textContent = probs.join(" "); return; }
     S.user = { name: document.getElementById("r-name").value.trim(), email: document.getElementById("r-email").value.trim() };

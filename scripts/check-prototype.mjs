@@ -27,7 +27,7 @@ await page.goto(file + "#registro");
 await page.fill("#r-pass", "corta");
 await page.click("#reg-form button");
 ok("Registro valida contraseña y aceptación", await vis(page.locator("#reg-err")));
-await page.fill("#r-pass", "claveSegura123");
+await page.fill("#r-pass", "frase larga de prueba 2026");
 await page.check("#r-terms"); await page.check("#r-priv");
 await page.click("#reg-form button");
 await page.click("#confirm-email");

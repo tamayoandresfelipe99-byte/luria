@@ -64,6 +64,11 @@ export interface ProcessDeps {
   repo: PaymentRepo;
   licenses: LicenseAdapter;
   now: () => Date;
+  /**
+   * ¿Registrar este rechazo? Limita cuántos eventos falsos puede escribir un mismo origen en la base de datos
+   * (sin límite, cualquiera podría llenar payment_events con firmas inválidas). Por defecto, siempre.
+   */
+  allowRejectedRecord?: () => Promise<boolean>;
 }
 
 export interface ProcessResult {
@@ -78,15 +83,21 @@ export async function processPaymentWebhook(deps: ProcessDeps, rawBody: string, 
   const verification = await provider.verifyWebhook(rawBody, headers, now());
 
   if (!verification.ok) {
-    // A06: eventos falsos o alterados se rechazan y no se procesan.
-    await repo.recordEvent({
-      provider: provider.id,
-      dedupeKey: `rejected:${verification.reason}:${crypto.randomUUID()}`,
-      eventType: "unverified",
-      transactionId: null,
-      signatureValid: false,
-      receivedAt: now(),
-    }).then((r) => repo.finishEvent(r.eventId, "rejected", verification.reason));
+    // A06: eventos falsos o alterados se rechazan y no se procesan. El registro es auditoría, no condición:
+    // si está limitado o falla, el rechazo se mantiene.
+    if (await (deps.allowRejectedRecord?.() ?? Promise.resolve(true))) {
+      await repo
+        .recordEvent({
+          provider: provider.id,
+          dedupeKey: `rejected:${verification.reason}:${crypto.randomUUID()}`,
+          eventType: "unverified",
+          transactionId: null,
+          signatureValid: false,
+          receivedAt: now(),
+        })
+        .then((r) => repo.finishEvent(r.eventId, "rejected", verification.reason))
+        .catch(() => undefined);
+    }
     const status = verification.reason === "unsupported_event" ? 200 : 401;
     return { httpStatus: status, outcome: `rejected:${verification.reason}` };
   }

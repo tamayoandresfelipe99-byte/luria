@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { SESSION_COOKIE_OPTIONS } from "./lib/supabase/cookie-options";
 
 /**
  * Proxy (antes "middleware" en Next.js ≤15):
@@ -17,6 +18,7 @@ export async function proxy(req: NextRequest) {
   let authed = false;
   if (url && key) {
     const sb = createServerClient(url, key, {
+      cookieOptions: SESSION_COOKIE_OPTIONS,
       cookies: {
         getAll: () => req.cookies.getAll(),
         setAll: (list: { name: string; value: string; options?: Record<string, unknown> }[]) => {

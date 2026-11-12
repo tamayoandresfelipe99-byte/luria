@@ -2,6 +2,7 @@ import { appConfig, licenseAdapter, paymentProvider } from "@/lib/services/facto
 import { processPaymentWebhook } from "@/lib/services/payment-processor";
 import { SupabasePaymentRepo } from "@/lib/supabase/repo";
 import { trackServer } from "@/lib/analytics/server";
+import { clientIp, rateLimitShared } from "@/lib/security/request";
 
 export const dynamic = "force-dynamic";
 
@@ -18,12 +19,18 @@ export async function POST(req: Request, ctx: { params: Promise<{ provider: stri
   if (raw.length > 64 * 1024) return new Response(null, { status: 413 });
   try {
     const result = await processPaymentWebhook(
-      { provider, repo: new SupabasePaymentRepo(appConfig().activationSlaHours), licenses: licenseAdapter(), now: () => new Date() },
+      {
+        provider,
+        repo: new SupabasePaymentRepo(appConfig().activationSlaHours),
+        licenses: licenseAdapter(),
+        now: () => new Date(),
+        allowRejectedRecord: () => rateLimitShared(`webhook-rechazado:${clientIp(req)}`, 30, 10 * 60_000),
+      },
       raw,
       req.headers,
     );
     if (result.outcome === "applied:approved") await trackServer("payment_verified", crypto.randomUUID());
-    return new Response(null, { status: result.httpStatus, headers: { "x-luria-outcome": result.outcome } });
+    return new Response(null, { status: result.httpStatus });
   } catch (e) {
     console.error("webhook_error", e instanceof Error ? e.message : "desconocido");
     return new Response(null, { status: 500 });

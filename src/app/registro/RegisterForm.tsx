@@ -3,6 +3,7 @@ import { useActionState, useEffect } from "react";
 import Link from "next/link";
 import { registerAction, type FormState } from "../auth-actions";
 import { track } from "@/components/Analytics";
+import { PASSWORD_HINT, PASSWORD_MAX, PASSWORD_MIN } from "@/lib/security/password";
 
 function Err({ e }: { e?: string[] }) {
   return e?.length ? <span className="error">{e[0]}</span> : null;
@@ -30,8 +31,8 @@ export function RegisterForm() {
       </div>
       <div className="field">
         <label htmlFor="password">Contraseña</label>
-        <input id="password" name="password" type="password" autoComplete="new-password" required minLength={10} aria-invalid={!!fe.password} aria-describedby="pwd-hint" />
-        <span id="pwd-hint" className="hint">Mínimo 10 caracteres, con letras y números. No uses tu contraseña de ZAJUNA.</span>
+        <input id="password" name="password" type="password" autoComplete="new-password" required minLength={PASSWORD_MIN} maxLength={PASSWORD_MAX} aria-invalid={!!fe.password} aria-describedby="pwd-hint" />
+        <span id="pwd-hint" className="hint">{PASSWORD_HINT}</span>
         <Err e={fe.password} />
       </div>
       <div className="field">

@@ -5,8 +5,8 @@
 | HTTPS en producción | `assertSafeConfig` exige URL `https://`; HSTS en `next.config.ts` |
 | Secretos en servidor | Solo `NEXT_PUBLIC_*` llega al navegador. `server-only` en los módulos sensibles. La prueba **A19** analiza los componentes cliente en busca de secretos o importaciones de servidor |
 | Validación de entradas | zod `.strict()` en cada API y acción |
-| Sesiones | Supabase Auth con cookies (`@supabase/ssr`); `getUser()` valida contra Auth (no se confía en la cookie sola); refresco en `proxy.ts` |
-| Autenticación | Contraseña ≥10 caracteres con letras y números; verificación de correo; recuperación con enlace de duración limitada (configurar 3600 s en Supabase); mensajes neutrales (A16) |
+| Sesiones | Supabase Auth con cookies `HttpOnly`, `Secure` y `SameSite=Lax` (`src/lib/supabase/cookie-options.ts`); `getUser()` valida contra Auth (no se confía en la cookie sola); refresco en `proxy.ts`; al cambiar la contraseña se cierran las demás sesiones |
+| Autenticación | Contraseña de 15 a 128 caracteres, sin reglas de composición, con rechazo de contraseñas triviales o con datos de la cuenta y consulta de filtraciones con k-anonimato (`src/lib/security/password.ts`, `breach.ts`); verificación de correo; recuperación con enlace de duración limitada (3600 s); mensajes neutrales (A16) |
 | Autorización por rol | `staff_roles` + `has_role()`; verificación en el layout de `/admin`, en cada API y en RLS |
 | Mínimo privilegio | El rol comercial no ve eventos técnicos, auditoría, licencias ni soporte |
 | CSRF | Verificación de `Origin` en APIs que cambian estado; cookies SameSite=Lax; las server actions de Next.js validan el origen |
@@ -17,8 +17,9 @@
 | Auditoría | `audit_log` inmutable (trigger); se registra cada pago, activación, revocación, pago manual y cancelación |
 | Separación de entornos | Proyectos Supabase y URLs de webhook distintos; producción rechaza piezas simuladas |
 | Copias y restauración | Supabase Pro: copias diarias. Procedimiento en `08-despliegue.md` §5 |
-| Redirecciones abiertas | `safeNext` solo acepta rutas internas |
-| Cabeceras | CSP, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`; `noindex` + `no-store` en áreas privadas |
+| Redirecciones abiertas | `safeInternalPath` (`src/lib/security/redirect.ts`) solo acepta rutas internas; bloquea `//host` y `/\host` |
+| Cabeceras | CSP (con `object-src 'none'`), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, COOP; `noindex` + `no-store` en áreas privadas; `no-store` + `no-referrer` en las páginas de acceso |
+| Auditoría de seguridad | `16-auditoria-seguridad.md` (12-nov-2026) y pruebas `supabase/tests/40_zero_trust.sql`, `tests/security.test.ts` |
 
 ## Datos que NO se guardan
 

@@ -8,6 +8,11 @@ import { rateLimitShared } from "@/lib/security/request";
 import { appConfig } from "@/lib/services/factory";
 import { loginErrorMessage, recoverAccountMessage, registerDoneMessage } from "@/lib/services/auth-messages";
 import { NOTICE_VERSIONS } from "@/lib/content/site";
+import { passwordProblem } from "@/lib/security/password";
+import { isBreachedPassword } from "@/lib/security/breach";
+import { safeInternalPath } from "@/lib/security/redirect";
+
+const BREACHED_MESSAGE = "Esta contraseña aparece en filtraciones de datos conocidas. Elige otra.";
 
 export interface FormState {
   ok?: boolean;
@@ -20,11 +25,6 @@ async function ip() {
   return h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "desconocida";
 }
 
-/** Solo rutas internas para evitar redirecciones abiertas. */
-function safeNext(v: FormDataEntryValue | null, fallback = "/cuenta") {
-  const s = typeof v === "string" ? v : "";
-  return s.startsWith("/") && !s.startsWith("//") && !s.startsWith("/\\") ? s : fallback;
-}
 
 export async function registerAction(_: FormState, fd: FormData): Promise<FormState> {
   if (!(await rateLimitShared(`reg:${await ip()}`, 5, 15 * 60_000))) return { message: "Demasiados intentos. Espera unos minutos." };
@@ -32,6 +32,7 @@ export async function registerAction(_: FormState, fd: FormData): Promise<FormSt
   const parsed = registerSchema.safeParse(raw);
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors, message: "Revisa los campos marcados." };
   const v = parsed.data;
+  if (await isBreachedPassword(v.password)) return { fieldErrors: { password: [BREACHED_MESSAGE] }, message: "Revisa los campos marcados." };
   const cfg = appConfig();
   const sb = await supabaseServer();
   const { data, error } = await sb.auth.signUp({
@@ -73,7 +74,7 @@ export async function loginAction(_: FormState, fd: FormData): Promise<FormState
   const sb = await supabaseServer();
   const { error } = await sb.auth.signInWithPassword(parsed.data);
   if (error) return { message: /confirm/i.test(error.message) ? "Confirma tu correo antes de ingresar." : loginErrorMessage() };
-  redirect(safeNext(fd.get("siguiente")));
+  redirect(safeInternalPath(fd.get("siguiente")));
 }
 
 export async function recoverAction(_: FormState, fd: FormData): Promise<FormState> {
@@ -89,11 +90,18 @@ export async function recoverAction(_: FormState, fd: FormData): Promise<FormSta
 
 export async function resetPasswordAction(_: FormState, fd: FormData): Promise<FormState> {
   const pwd = String(fd.get("password") ?? "");
-  if (pwd.length < 10 || !/[A-Za-z]/.test(pwd) || !/[0-9]/.test(pwd)) return { message: "La contraseña debe tener al menos 10 caracteres, con letras y números." };
-  if (pwd !== fd.get("confirm")) return { message: "Las contraseñas no coinciden." };
   const sb = await supabaseServer();
+  const { data: auth } = await sb.auth.getUser();
+  if (!auth.user) return { message: "El enlace venció o no es válido. Solicita uno nuevo." };
+  if (!(await rateLimitShared(`reset:${auth.user.id}`, 5, 15 * 60_000))) return { message: "Demasiados intentos. Espera unos minutos." };
+  const problem = passwordProblem(pwd, { email: auth.user.email ?? undefined });
+  if (problem) return { message: problem };
+  if (pwd !== fd.get("confirm")) return { message: "Las contraseñas no coinciden." };
+  if (await isBreachedPassword(pwd)) return { message: BREACHED_MESSAGE };
   const { error } = await sb.auth.updateUser({ password: pwd });
-  if (error) return { message: "El enlace venció o no es válido. Solicita uno nuevo." };
+  if (error) return { message: "No pudimos cambiar la contraseña. Si el enlace venció, solicita uno nuevo." };
+  // Cierra las demás sesiones abiertas: si alguien más tenía acceso, lo pierde al cambiar la contraseña.
+  await sb.auth.signOut({ scope: "others" });
   redirect("/cuenta?aviso=clave-actualizada");
 }
 

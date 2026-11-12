@@ -21,7 +21,7 @@ export async function updateProfileAction(_: ProfileState, fd: FormData): Promis
   const { error } = await sb.from("profiles").update({ full_name: parsed.data.name, phone: parsed.data.phone || null }).eq("id", auth.user.id);
   if (error) return { message: "No pudimos guardar los cambios." };
   // Consentimiento comercial: se agrega un registro nuevo (historial); manda el más reciente (A18).
-  const { data: last } = await sb.from("consents").select("granted").eq("purpose", "marketing").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: last } = await sb.from("consents").select("granted").eq("user_id", auth.user.id).eq("purpose", "marketing").order("created_at", { ascending: false }).limit(1).maybeSingle();
   const want = parsed.data.marketing === "on";
   if (!last || (last as { granted: boolean }).granted !== want) {
     await sb.from("consents").insert({ user_id: auth.user.id, purpose: "marketing", granted: want, notice_version: NOTICE_VERSIONS.marketing });

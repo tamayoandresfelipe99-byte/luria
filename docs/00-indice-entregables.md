@@ -28,6 +28,7 @@
 | 24 | Errores y limitaciones | `14-limitaciones.md` |
 | 25 | Manual del administrador comercial | `09-manual-admin-comercial.md` |
 | 26 | Manual de pagos y activaciones | `10-manual-pagos-activaciones.md` |
+| 27 | Auditoría de seguridad Zero Trust | `16-auditoria-seguridad.md` |
 | 27 | Procedimiento de renovación | `05-suscripciones-renovacion.md` |
 | 28 | Requisitos legales pendientes | `11-legal-pendiente.md` |
 | 29 | Matriz de dependencias técnicas | `12-matriz-dependencias.md` |

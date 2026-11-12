@@ -18,3 +18,8 @@ grant execute on function auth.uid() to anon, authenticated, service_role;
 grant usage on schema public to service_role;
 alter default privileges in schema public grant all on tables to service_role;
 alter default privileges in schema public grant all on sequences to service_role;
+-- Igual que Supabase: todo objeto nuevo en public queda concedido por defecto a anon y authenticated.
+-- Así las pruebas detectan tablas o funciones que una migración olvide restringir.
+alter default privileges in schema public grant all on tables to anon, authenticated;
+alter default privileges in schema public grant all on sequences to anon, authenticated;
+alter default privileges in schema public grant execute on functions to anon, authenticated;

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
+import { safeInternalPath } from "@/lib/security/redirect";
 
 /**
  * Confirmación de correo y enlaces de recuperación (plantillas de Supabase con token_hash).
@@ -9,8 +10,8 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const token_hash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type") as "signup" | "recovery" | "email" | null;
-  const next = url.searchParams.get("siguiente") ?? (type === "recovery" ? "/restablecer" : "/cuenta");
-  const dest = next.startsWith("/") && !next.startsWith("//") ? next : "/cuenta";
+  // Destino solo interno: `/\\host` o `//host` se convertirían en una redirección abierta.
+  const dest = safeInternalPath(url.searchParams.get("siguiente"), type === "recovery" ? "/restablecer" : "/cuenta");
   if (token_hash && type) {
     const sb = await supabaseServer();
     const { error } = await sb.auth.verifyOtp({ token_hash, type });

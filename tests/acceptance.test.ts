@@ -27,7 +27,7 @@ test("A01 — registro sin pago no concede acceso", () => {
 });
 
 test("A02 — rechazar marketing no bloquea registro ni compra", () => {
-  const r = registerSchema.safeParse({ name: "Ana Pérez", email: "ana@example.com", password: "clave12345x", acceptTerms: "on", acceptPrivacy: "on" });
+  const r = registerSchema.safeParse({ name: "Ana Pérez", email: "ana@example.com", password: "una frase larga de prueba", acceptTerms: "on", acceptPrivacy: "on" });
   assert.ok(r.success);
   const g = purchaseGate({ authenticated: true, acceptedTerms: true, eligibility: "verified", acknowledgedDesktopRequirement: true, realChargesEnabled: true, simulationAllowed: false, hasActiveFuturePeriod: false });
   assert.equal(g.allowed, true);

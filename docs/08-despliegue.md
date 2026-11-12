@@ -10,7 +10,7 @@
 4. En Auth → Email Templates, usar enlaces con `token_hash`. Las plantillas listas en español están en `supabase/templates/confirmacion.html` y `recuperacion.html` (copiar su contenido). Sin este paso, los enlaces de las plantillas por defecto solo funcionan en el mismo navegador donde se pidió el correo:
    - Confirmación: `{{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&type=signup`
    - Recuperación: `{{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&type=recovery&siguiente=/restablecer`
-5. Auth → caducidad de OTP/enlaces: 3600 s. Activar la protección de contraseñas filtradas si el plan la ofrece.
+5. Auth → caducidad de OTP/enlaces: 3600 s. **Longitud mínima de contraseña: 15.** Activar **Secure password change** y, si el plan la ofrece, la protección de contraseñas filtradas. Activar MFA TOTP. Lista completa en `16-auditoria-seguridad.md` §I.
 6. Configurar un SMTP propio para correos de Auth (el SMTP incluido tiene límites bajos).
 7. Crear el primer administrador (ver `README.md`).
 

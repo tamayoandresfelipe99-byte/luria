@@ -16,16 +16,19 @@ export async function requireUser(next: string) {
   return user;
 }
 
-export async function staffRoles(): Promise<StaffRole[]> {
+export async function staffRoles(userId?: string): Promise<StaffRole[]> {
   const sb = await supabaseServer();
-  const { data } = await sb.from("staff_roles").select("role");
+  const uid = userId ?? (await sb.auth.getUser()).data.user?.id;
+  if (!uid) return [];
+  // Filtro explícito por usuario: un admin puede leer todos los roles por RLS y no debe heredarlos.
+  const { data } = await sb.from("staff_roles").select("role").eq("user_id", uid);
   return ((data ?? []) as { role: StaffRole }[]).map((r) => r.role);
 }
 
 /** Exige al menos uno de los roles. Redirige si no hay sesión; 404 lógico si no tiene permiso. */
 export async function requireRole(allowed: StaffRole[], next = "/admin") {
   const user = await requireUser(next);
-  const roles = await staffRoles();
+  const roles = await staffRoles(user.id);
   if (!roles.some((r) => allowed.includes(r))) redirect("/cuenta?aviso=sin-permiso");
   return { user, roles };
 }

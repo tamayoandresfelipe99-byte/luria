@@ -1,5 +1,25 @@
 # Registro de cambios
 
+## v0.4.0 · 12-nov-2026 · Auditoría de seguridad
+
+Detalle, evidencias y pendientes en `docs/16-auditoria-seguridad.md`.
+
+### Corregido
+- **SEC-001** Redirección abierta en `/auth/confirmar?siguiente=/\host`. Se añade `safeInternalPath`, compartido con el ingreso.
+- **SEC-002** Cookies de sesión de Supabase sin `HttpOnly` ni `Secure`; ahora las llevan. Se elimina el cliente de Supabase para el navegador, que no se usaba.
+- **SEC-003** Política de contraseñas: mínimo 15 caracteres sin reglas de composición, lista de rechazo y consulta de filtraciones con k-anonimato (`PASSWORD_BREACH_CHECK`).
+- **SEC-004** El restablecimiento exige sesión, tiene límite de intentos y cierra las demás sesiones.
+- **SEC-005** Los webhooks con firma falsa ya no escriben sin límite en `payment_events`, y responden 401 aunque falle la base de datos.
+- **SEC-006** Filtros explícitos por propietario en roles, estado del pago y consentimientos.
+- **SEC-007** y **SEC-008**: cabeceras adicionales (`object-src`, COOP, `no-referrer` y `no-store` en las páginas de acceso); se elimina la cabecera `x-luria-outcome`.
+
+### Añadido
+- `supabase/tests/40_zero_trust.sql`: 10 invariantes de RLS, privilegios y aislamiento. La base de prueba ahora imita los permisos por defecto de Supabase.
+- `tests/security.test.ts`: 6 pruebas nuevas.
+
+### Pendiente (requiere decisión)
+- MFA obligatorio para el personal; supresión y exportación de datos; CSP con nonce. Ver la sección H del informe.
+
 ## v0.3.0 · 12-nov-2026
 
 ### Cambiado (solo visual)

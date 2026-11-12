@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PASSWORD_MAX, PASSWORD_MIN, passwordProblem } from "./security/password";
 
 /**
  * Esquemas de entrada. Regla general: `.strict()` en lo que llega del navegador,
@@ -9,12 +10,7 @@ export const registerSchema = z
   .object({
     name: z.string().trim().min(2, "Escribe tu nombre").max(120),
     email: z.string().trim().toLowerCase().email("Correo no válido").max(254),
-    password: z
-      .string()
-      .min(10, "Mínimo 10 caracteres")
-      .max(128)
-      .regex(/[A-Za-z]/, "Incluye letras")
-      .regex(/[0-9]/, "Incluye números"),
+    password: z.string().min(PASSWORD_MIN, `Mínimo ${PASSWORD_MIN} caracteres`).max(PASSWORD_MAX),
     phone: z
       .string()
       .trim()
@@ -25,11 +21,15 @@ export const registerSchema = z
     acceptPrivacy: z.literal("on", { error: "Debes aceptar el aviso de privacidad" }),
     marketing: z.literal("on").optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((v, ctx) => {
+    const problem = passwordProblem(v.password, { email: v.email, name: v.name });
+    if (problem) ctx.addIssue({ code: "custom", path: ["password"], message: problem });
+  });
 
-export const loginSchema = z.object({ email: z.string().trim().toLowerCase().email(), password: z.string().min(1).max(128) }).strict();
+export const loginSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254), password: z.string().min(1).max(PASSWORD_MAX) }).strict();
 
-export const recoverSchema = z.object({ email: z.string().trim().toLowerCase().email() }).strict();
+export const recoverSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254) }).strict();
 
 /** Compra: el cliente NO envía precio ni producto distinto al vigente. */
 export const createOrderSchema = z
