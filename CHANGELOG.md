@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## v0.4.1 · 12-nov-2026
+
+### Cambiado
+- Longitud mínima de contraseña: **10 caracteres** en lugar de 15, por decisión del propietario. Se mantienen la ausencia de reglas de composición, la lista de rechazo y la consulta de filtraciones. El riesgo aceptado queda documentado en `docs/16-auditoria-seguridad.md` §H-4.
+
 ## v0.4.0 · 12-nov-2026 · Auditoría de seguridad
 
 Detalle, evidencias y pendientes en `docs/16-auditoria-seguridad.md`.

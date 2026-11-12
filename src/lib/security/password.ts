@@ -1,12 +1,13 @@
 /**
  * Política de contraseñas (NIST SP 800-63B, OWASP ASVS 2.1):
- *  - Longitud mínima de 15 caracteres (un solo factor) y máxima amplia (128) para admitir frases.
+ *  - Longitud mínima de 10 caracteres (decisión del propietario, 12-nov-2026; NIST sugiere 15 sin MFA) y máxima
+ *    amplia (128) para admitir frases. Las listas de rechazo y la consulta de filtraciones compensan la menor longitud.
  *  - Sin reglas de composición arbitrarias (no se exige «mayúscula, número y símbolo»).
  *  - Se rechazan contraseñas triviales, repetitivas o que contienen datos de la propia cuenta.
  *  - En el servidor se consulta además si aparece en filtraciones conocidas (k-anonimato, ver `isBreachedPassword`).
  * La contraseña nunca se guarda ni se registra en esta aplicación: el hash (bcrypt) lo gestiona Supabase Auth.
  */
-export const PASSWORD_MIN = 15;
+export const PASSWORD_MIN = 10;
 export const PASSWORD_MAX = 128;
 export const PASSWORD_HINT = `Mínimo ${PASSWORD_MIN} caracteres. Puedes usar una frase, por ejemplo cuatro palabras. No uses tu contraseña de ZAJUNA.`;
 

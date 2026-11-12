@@ -28,7 +28,7 @@ Se corrigieron 8 debilidades, todas con pruebas de regresión:
 |---|---|
 | Redirección abierta tras confirmar el correo | Un enlace podía terminar en un sitio de phishing |
 | Cookie de sesión legible por JavaScript y sin `Secure` | Un XSS habría robado la sesión |
-| Política de contraseñas débil (10 caracteres con reglas de composición) | Ahora son 15 caracteres, sin reglas arbitrarias, con lista de rechazo y consulta de filtraciones |
+| Política de contraseñas débil (10 caracteres con reglas de composición) | Siguen siendo 10 caracteres (decisión del propietario), pero sin reglas arbitrarias, con lista de rechazo y consulta de filtraciones |
 | El cambio de contraseña no cerraba las otras sesiones | Un atacante con la sesión robada la conservaba |
 | Webhooks falsos escribían en la base sin límite | Permitía llenar la base de datos |
 | Consultas que dependían solo de RLS en cuentas del personal | Defensa en profundidad |
@@ -49,7 +49,7 @@ Se corrigieron 8 debilidades, todas con pruebas de regresión:
 |---|---|---|---|---|---|---|
 | SEC-001 | Redirección abierta en `/auth/confirmar?siguiente=/\host`: `new URL("/\\evil", base)` resuelve a `https://evil/` | P2 | 601 | Demostrada con `node -e` y luego bloqueada en el navegador (ingresar con `?siguiente=/%5Cevil.example` lleva a `/cuenta`) | **Corregido** | `src/lib/security/redirect.ts` (`safeInternalPath`), usado en el ingreso y en la confirmación. Prueba `SEC-REDIR-01` |
 | SEC-002 | Cookies de sesión `sb-*` sin `HttpOnly` ni `Secure` (valores por defecto de `@supabase/ssr`) | P2 | 1004, 614 | `node_modules/@supabase/ssr/dist/main/utils/constants.js`: `httpOnly: false` | **Corregido** | `src/lib/supabase/cookie-options.ts`. Verificado en el navegador: `Secure; HttpOnly; SameSite=lax`, y `document.cookie` no ve la sesión. Se eliminó el cliente de navegador sin uso (`supabase/browser.ts`) |
-| SEC-003 | Política de contraseñas débil: 10 caracteres con reglas de composición; mínimo de Supabase local en 6; sin consulta de filtraciones en el plan gratuito | P2 | 521 | `src/lib/validation.ts` (antes), `supabase/config.toml:183` | **Corregido en código**; **pendiente en el panel** | Mínimo 15 y máximo 128, sin reglas de composición, rechazo de contraseñas triviales, repetitivas o con datos de la cuenta, y consulta en Have I Been Pwned con k-anonimato. Pruebas `SEC-PWD-01…04` |
+| SEC-003 | Política de contraseñas débil: 10 caracteres con reglas de composición; mínimo de Supabase local en 6; sin consulta de filtraciones en el plan gratuito | P2 | 521 | `src/lib/validation.ts` (antes), `supabase/config.toml:183` | **Corregido en código**; **pendiente en el panel** | Mínimo 10 (decisión del propietario; ver H-4) y máximo 128, sin reglas de composición, rechazo de contraseñas triviales, repetitivas o con datos de la cuenta, y consulta en Have I Been Pwned con k-anonimato. Pruebas `SEC-PWD-01…04` |
 | SEC-004 | El cambio de contraseña en `/restablecer` no exigía reautenticación, no tenía límite y no cerraba las demás sesiones | P2 | 620, 613 | `src/app/auth-actions.ts` (antes) | **Parcial** | Ahora tiene límite (5 en 15 min), aplica la política, cierra las demás sesiones (`signOut({ scope: "others" })`) y `secure_password_change = true` en el `config.toml` local. **Falta activarlo en el panel de Supabase** |
 | SEC-005 | Escritura sin autenticación en `payment_events`: cada webhook con firma falsa insertaba una fila | P2 | 770 | `payment-processor.ts` (antes); prueba HTTP: la firma falsa daba 500 al fallar el registro | **Corregido** | El registro de rechazos tiene límite por IP (30 en 10 min) y, si falla, la respuesta sigue siendo 401. Prueba `SEC-WH-01` |
 | SEC-006 | Consultas que dependían solo de RLS: en cuentas del personal, `staffRoles()`, `/api/pago/estado` y el consentimiento del perfil podían leer filas de otros usuarios (sin escalamiento demostrado) | P3 | 639 | `src/lib/auth.ts`, `api/pago/estado`, `cuenta/actions.ts` | **Corregido** | Filtro explícito `user_id = auth.user.id` y validación del formato de la referencia |
@@ -172,17 +172,17 @@ Invariantes globales que **fallan automáticamente** si una migración futura la
 | `src/app/auth/confirmar/route.ts`, `src/app/auth-actions.ts` | Usan `safeInternalPath` | SEC-001 | Ídem |
 | `src/lib/supabase/cookie-options.ts` (nuevo), `server.ts`, `proxy.ts` | Cookies `HttpOnly`, `Secure` y `SameSite=Lax` | SEC-002 | Navegador con Auth simulado |
 | `src/lib/supabase/browser.ts` (eliminado) | Cliente de navegador sin uso | Incompatible con HttpOnly; reduce la superficie | `tsc`, `build` |
-| `src/lib/security/password.ts`, `breach.ts` (nuevos); `validation.ts`; `RegisterForm.tsx`; `restablecer/page.tsx` | Política de 15 caracteres y consulta de filtraciones | SEC-003 | `SEC-PWD-01…04` |
+| `src/lib/security/password.ts`, `breach.ts` (nuevos); `validation.ts`; `RegisterForm.tsx`; `restablecer/page.tsx` | Política de contraseñas (mínimo 10) y consulta de filtraciones | SEC-003 | `SEC-PWD-01…04` |
 | `src/app/auth-actions.ts` | Reset: sesión obligatoria, límite, política, filtraciones y cierre de las demás sesiones | SEC-004 | Revisión y `tsc` (la prueba de punta a punta no se ejecutó, ver el alcance) |
 | `src/lib/services/payment-processor.ts`, `webhook/[provider]/route.ts` | Límite de rechazos registrados, 401 aunque falle la base y sin cabecera de resultado | SEC-005, SEC-008 | `SEC-WH-01`, A06 |
 | `src/lib/auth.ts`, `api/pago/estado/route.ts`, `cuenta/actions.ts` | Filtros explícitos por propietario | SEC-006 | `tsc`, ZT-07 |
 | `next.config.ts` | Cabeceras adicionales | SEC-007 | `curl -I` (7/7 cabeceras) |
-| `supabase/config.toml` | Mínimo de 15, `secure_password_change`, 60 s entre correos | SEC-003, SEC-004 (solo local) | — |
+| `supabase/config.toml` | Mínimo de 10, `secure_password_change`, 60 s entre correos | SEC-003, SEC-004 (solo local) | — |
 | `supabase/tests/00_supabase_stub.sql`, `40_zero_trust.sql`, `scripts/test-sql.sh` | Permisos por defecto de Supabase y 10 invariantes | SEC-013 | Mutación de control |
 | `tests/acceptance.test.ts`, `scripts/check-prototype.mjs`, `prototype/template.html` | Contraseñas de prueba y texto del prototipo con la nueva política | Coherencia | 36/36, 24/24 |
 
 **Efectos secundarios posibles:**
-- Quien tenga una contraseña de menos de 15 caracteres **puede seguir ingresando**; la regla solo se aplica al crearla o cambiarla.
+- Las contraseñas existentes de 10 caracteres o más que antes cumplían la regla de letras y números siguen siendo válidas; las nuevas ya no necesitan números.
 - Si Have I Been Pwned no responde en 2 s, el registro continúa (falla abierta).
 - Las cookies HttpOnly impiden usar Supabase desde el navegador. Hoy no se usa, pero si en el futuro se necesita, debe hacerse a través del servidor.
 
@@ -227,6 +227,7 @@ Next.js 16 lo permite desde `proxy.ts` (`node_modules/next/dist/docs/01-app/02-g
 
 **H-4 · Otros riesgos aceptados o fuera del código:**
 - **Vida de la sesión:** la cookie dura 400 días por la librería, aunque la sesión real depende del refresh token de Supabase. Con Supabase Pro, configurar *Time-box* y *Inactivity timeout* de sesión.
+- **Longitud mínima de 10 caracteres:** decisión del propietario (12-nov-2026). NIST SP 800-63B recomienda 15 para cuentas sin segundo factor. El riesgo se compensa con la lista de rechazo, la consulta de filtraciones y los límites de intentos de ingreso. Para el personal, la compensación principal será el MFA (H-1).
 - **IP de cliente:** se toma de `x-forwarded-for`. Vercel la sobrescribe con la IP real; en un VPS propio, el proxy inverso debe limpiar esa cabecera.
 - **Riesgos de la extensión** (datos de aprendices, acciones masivas): están fuera del alcance web y se tratan en `06-seguridad-privacidad.md`.
 - **Inteligencia artificial:** la aplicación **no integra modelos de IA**, así que los riesgos de inyección de prompts no aplican. Las amenazas automatizadas se mitigan con los límites de solicitudes (registro, ingreso, recuperación, compra, soporte, elegibilidad, analítica y rechazos de webhook) y con la protección DDoS de Vercel. **No hay WAF ni CAPTCHA**: si aparece abuso, añadir Vercel Firewall o Cloudflare Turnstile en el registro.
@@ -236,7 +237,7 @@ Next.js 16 lo permite desde `proxy.ts` (`node_modules/next/dist/docs/01-app/02-g
 ## I. Lista de verificación de lanzamiento
 
 **Supabase (panel):**
-- [ ] Authentication → Policies o Sign In / Providers: **Minimum password length = 15**.
+- [ ] Authentication → Policies o Sign In / Providers: **Minimum password length = 10**.
 - [ ] **Secure password change** (pedir inicio de sesión reciente para cambiar la contraseña): activado.
 - [ ] **Leaked password protection**: activar si el plan lo ofrece (Pro). En el plan gratuito, la aplicación ya consulta Have I Been Pwned.
 - [ ] Email OTP Expiration = 3600 s; SMTP propio configurado.

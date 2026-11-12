@@ -6,10 +6,11 @@ import { passwordProblem, PASSWORD_MIN } from "../src/lib/security/password";
 import { safeInternalPath } from "../src/lib/security/redirect";
 import { registerSchema } from "../src/lib/validation";
 
-test("SEC-PWD-01 — mínimo 15 caracteres y sin reglas de composición", () => {
-  assert.equal(PASSWORD_MIN, 15);
+test("SEC-PWD-01 — mínimo 10 caracteres y sin reglas de composición", () => {
+  assert.equal(PASSWORD_MIN, 10);
   assert.ok(passwordProblem("corta123"));
-  assert.ok(passwordProblem("abcdefghijklmn")); // 14
+  assert.ok(passwordProblem("abcdefghi")); // 9
+  assert.equal(passwordProblem("cielo azul"), null, "10 caracteres sin números es válida");
   assert.equal(passwordProblem("cielo verde sobre bogotá"), null, "una frase sin números ni mayúsculas es válida");
   assert.equal(passwordProblem("x".repeat(128).replace(/x/g, (_, i) => "abcdefghij"[i % 10]!)), null);
   assert.ok(passwordProblem("a".repeat(129)), "máximo 128");
@@ -24,7 +25,8 @@ test("SEC-PWD-02 — rechaza contraseñas triviales, repetitivas y con datos de 
 
 test("SEC-PWD-03 — el registro aplica la política en el servidor", () => {
   const base = { name: "Ana Pérez", email: "ana@example.com", acceptTerms: "on", acceptPrivacy: "on" };
-  assert.equal(registerSchema.safeParse({ ...base, password: "clave12345x" }).success, false);
+  assert.equal(registerSchema.safeParse({ ...base, password: "clave1234" }).success, false, "9 caracteres");
+  assert.equal(registerSchema.safeParse({ ...base, password: "clave12345x" }).success, true, "11 caracteres");
   assert.equal(registerSchema.safeParse({ ...base, password: "passwordpassword123" }).success, false);
   assert.equal(registerSchema.safeParse({ ...base, password: "una frase larga de prueba" }).success, true);
 });

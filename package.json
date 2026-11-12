@@ -1,6 +1,6 @@
 {
   "name": "luria-web",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "Plataforma web comercial de LURIA: información, registro, suscripciones, pagos, activación y administración.",
   "scripts": {
