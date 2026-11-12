@@ -24,6 +24,8 @@ Migraciones en `supabase/migrations/` (aplicar en orden). Probadas en PostgreSQL
 | attribution | `attribution` + `referrers` + `commissions` | comisión única por pago; solo referidos autorizados |
 | — | `analytics_events` | sin datos personales; `path` no admite `@` |
 | audit_log | `audit_log` | trigger que impide UPDATE/DELETE |
+| Entrega del acceso | `access_grants` | Una fila por cliente: estado (`pendiente`, `enlace_guardado`, `habilitado`, `suspendido`, `revocado`), enlace `https://`, quién guardó y quién habilitó, y cuándo. Solo el personal de operación la lee; solo las funciones escriben |
+| Notificaciones | `notifications` | Avisos dentro de la cuenta del cliente; cada cliente lee las suyas y solo puede marcarlas como leídas |
 
 No existe ninguna tabla con datos académicos, evidencias, aprendices ni contraseñas institucionales.
 
@@ -55,6 +57,13 @@ Transiciones de pago (`fn_decide_payment`, igual a `decidePaymentTransition` en 
 - reembolso o reversión solo desde `approved`
 
 ## 2.3 Funciones transaccionales
+
+**Pago y acceso (migración 0008):**
+- `fn_payment_state(usuario)` calcula el estado de pago.
+- `fn_access_save_link`, `fn_access_enable` y `fn_access_revoke` son solo para admin: verifican el rol dentro de la función, exigen suscripción vigente para habilitar y dejan auditoría y notificación.
+- `fn_my_access()` es la vista del cliente: el enlace solo llega si el acceso está habilitado y la suscripción vigente.
+- `fn_admin_access_overview()` alimenta la tabla del personal.
+- El trigger `subscriptions_access_follow` suspende el acceso al vencer la suscripción y lo revoca ante un reembolso o una reversión.
 
 | Función | Quién la llama | Qué hace |
 |---|---|---|

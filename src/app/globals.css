@@ -234,7 +234,7 @@ textarea { min-height: 120px; resize: vertical; }
 .price small { font-size: 1rem; color: var(--ink-3); font-weight: 600; }
 
 /* Tablas (admin) */
-.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); }
 table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { background: var(--bg-soft); font-weight: 700; color: var(--ink-2); white-space: nowrap; }
@@ -246,8 +246,8 @@ th { background: var(--bg-soft); font-weight: 700; color: var(--ink-2); white-sp
 .admin-nav { background: var(--footer); padding: 20px 12px; }
 .admin-nav a { display: block; color: #d3e2d4; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-weight: 600; }
 .admin-nav a:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
-.admin-main { padding: 28px; background: var(--bg-soft); }
-@media (max-width: 860px) { .admin-shell { grid-template-columns: 1fr; } .admin-nav { display: flex; overflow-x: auto; gap: 4px; } }
+.admin-main { padding: 28px; background: var(--bg-soft); min-width: 0; }
+@media (max-width: 860px) { .admin-shell { grid-template-columns: 1fr; } .admin-nav { display: flex; overflow-x: auto; gap: 4px; min-width: 0; } .admin-nav a { white-space: nowrap; } }
 
 /* FAQ */
 details { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 18px; background: #fff; }
@@ -269,3 +269,31 @@ details[open] { border-color: var(--line-strong); }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 @media print { .site-header, .site-footer, .whatsapp-fab, .consent-bar { display: none; } }
+
+/* Pagos y accesos (panel administrativo) */
+.btn-sm { min-height: 36px; padding: 6px 12px; font-size: 0.875rem; border-radius: 8px; white-space: nowrap; }
+.nowrap { white-space: nowrap; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink-2); font-weight: 600; font-size: 0.875rem; text-decoration: none; transition: background 0.2s var(--ease), border-color 0.2s var(--ease); }
+.chip:hover { border-color: var(--green-500); color: var(--green-700); }
+.chip-on { background: var(--green-100); border-color: var(--green-500); color: var(--green-700); }
+.chip-n { background: var(--bg-soft); border-radius: 999px; padding: 0 8px; font-variant-numeric: tabular-nums; }
+.chip-alert { border-color: #e7b24a; }
+.chip-alert .chip-n { background: var(--warn-bg); color: var(--warn); }
+.access-table td { vertical-align: middle; }
+.row-attention td:first-child { box-shadow: inset 3px 0 0 #e7b24a; }
+.access-link-form { display: flex; gap: 6px; align-items: center; }
+.access-link-form input { min-height: 36px; padding: 6px 10px; font-size: 0.875rem; width: 210px; }
+.access-link { display: inline-block; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+.access-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.text-ok { color: var(--ok); }
+.text-err { color: var(--err); }
+.kpi-feature { display: block; text-decoration: none; color: inherit; margin-bottom: 14px; border-left: 4px solid var(--green-500); }
+.kpi-feature:hover { color: inherit; border-color: var(--green-500); box-shadow: var(--shadow); }
+.kpi-alert { border-left-color: #e7b24a; background: var(--warn-bg); }
+.access-card { border-left: 4px solid var(--green-500); }
+.notif-list { list-style: none; margin: 0; padding: 0; }
+.notif-list li { padding: 10px 0; border-top: 1px solid var(--line); }
+.notif-list li:first-child { border-top: 0; }
+.notif-unread strong::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--green-500); margin-right: 8px; vertical-align: middle; }
+@media (max-width: 760px) { .access-link-form { flex-direction: column; align-items: stretch; } }

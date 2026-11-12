@@ -34,7 +34,9 @@ begin
   select string_agg(p.oid::regprocedure::text, ', ') into bad
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'public' and p.prosecdef and has_function_privilege('authenticated', p.oid, 'execute')
-     and p.proname not in ('has_role', 'is_staff', 'fn_cancel_renewal', 'fn_resume_renewal');
+     and p.proname not in ('has_role', 'is_staff', 'fn_cancel_renewal', 'fn_resume_renewal',
+                           -- Verifican rol o sesión por dentro (migración 0008):
+                           'fn_access_save_link', 'fn_access_enable', 'fn_access_revoke', 'fn_my_access', 'fn_admin_access_overview');
   assert bad is null, 'authenticated puede ejecutar funciones privilegiadas: ' || bad;
 end $$;
 
@@ -74,7 +76,7 @@ begin
   select string_agg(format('%s:%s', t, priv), ', ') into bad
     from unnest(array['staff_roles','orders','payments','payment_events','subscriptions','subscription_periods',
                       'licenses','activation_tasks','audit_log','commissions','referrers','attribution',
-                      'analytics_events','rate_limits','eligibility_checks','profiles']) t
+                      'analytics_events','rate_limits','eligibility_checks','profiles','access_grants','notifications']) t
     cross join unnest(array['INSERT','UPDATE']) priv
    where has_table_privilege('authenticated', ('public.' || t)::regclass, priv)
      and not (t = 'profiles' and priv = 'UPDATE');  -- solo columnas full_name y phone (ZT-08)

@@ -1,5 +1,21 @@
 # Registro de cambios
 
+## v0.5.0 · 12-nov-2026 · Separación entre pago y entrega del acceso
+
+### Añadido
+- **Dos estados independientes.** Estado de pago, calculado desde Supabase: pendiente de pago, en verificación, al día, próximo a vencer (≤ 7 días) y vencido. Estado de acceso, gestionado por un administrador: pendiente, enlace guardado, habilitado, suspendido y revocado. Migración `20261112000100_access_delivery.sql`.
+- **`/admin/accesos` «Pagos y accesos».** Tabla con usuario, estado de pago, vencimiento, estado de acceso, enlace y acciones (guardar enlace, habilitar, revocar con motivo, ver detalle). Filtros, entre ellos **«Pagaron, pero no tienen acceso»**, y búsqueda.
+- **Indicador en la vista general:** «Clientes con pago confirmado y acceso pendiente».
+- **Cuenta del cliente:** tarjeta «Tu acceso a LURIA» con los mensajes por combinación de estados, botón **«Acceder a LURIA»** y notificaciones.
+- **`/acceso`:** el enlace nunca se escribe en la página; en cada clic el servidor vuelve a verificar el acceso habilitado y la suscripción vigente antes de redirigir.
+- **Integración con licencias:** `/api/licencia/validar` exige además acceso habilitado y suscripción vigente. Revocar en el panel también revoca la licencia de la extensión.
+- **Coordinación automática:** el vencimiento suspende el acceso y el reembolso lo revoca, ambos con notificación y auditoría. La reactivación es siempre manual.
+- **Pruebas:** `supabase/tests/50_acceso.sql` (AC-01…09) y `tests/access-delivery.test.ts` (ACC-01…05). Las invariantes Zero Trust incluyen las tablas y funciones nuevas.
+
+### Corregido
+- En móvil, el panel de administración desbordaba la página horizontalmente (menú lateral y etiquetas ocultas dentro de las tablas).
+- `loadCustomerView` filtra explícitamente por el usuario (las cuentas del personal podían leer filas ajenas por RLS).
+
 ## v0.4.2 · 12-nov-2026
 
 ### Cambiado

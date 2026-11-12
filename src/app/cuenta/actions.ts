@@ -6,6 +6,15 @@ import { NOTICE_VERSIONS } from "@/lib/content/site";
 
 export interface ProfileState { ok?: boolean; message?: string }
 
+/** Marca como leídas las notificaciones propias (RLS y el filtro por usuario impiden tocar las ajenas). */
+export async function markNotificationsReadAction() {
+  const sb = await supabaseServer();
+  const { data: auth } = await sb.auth.getUser();
+  if (!auth.user) return;
+  await sb.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", auth.user.id).is("read_at", null);
+  revalidatePath("/cuenta");
+}
+
 const schema = z.object({
   name: z.string().trim().min(2).max(120),
   phone: z.string().trim().regex(/^(\+?57)?\s?3\d{9}$/).optional().or(z.literal("")),

@@ -13,6 +13,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <nav className="admin-nav" aria-label="Administración">
         <Link href="/admin">Vista general</Link>
         <Link href="/admin/clientes">Clientes</Link>
+        <Link href="/admin/accesos">Pagos y accesos</Link>
         {(is("admin") || is("comercial")) && <Link href="/admin/pagos">Pagos</Link>}
         {(is("admin") || is("soporte")) && <Link href="/admin/licencias">Licencias</Link>}
         {(is("admin") || is("soporte")) && <Link href="/admin/soporte">Soporte</Link>}

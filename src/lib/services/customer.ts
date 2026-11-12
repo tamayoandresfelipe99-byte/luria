@@ -18,14 +18,16 @@ export interface CustomerView {
 /** Todo con el cliente del usuario: RLS garantiza que solo lee lo propio (A10). */
 export async function loadCustomerView(now = new Date()): Promise<CustomerView> {
   const sb = await supabaseServer();
+  // Filtro explícito por propietario además de RLS: las cuentas del personal pueden leer filas ajenas.
+  const uid = (await sb.auth.getUser()).data.user?.id ?? "00000000-0000-0000-0000-000000000000";
   const [profile, sub, lic, pays, elig, mk, periods] = await Promise.all([
-    sb.from("profiles").select("full_name, email, phone").maybeSingle(),
-    sb.from("subscriptions").select("status, current_period_start, current_period_end, cancel_at_period_end, renewal_mode").maybeSingle(),
-    sb.from("licenses").select("status, valid_until").maybeSingle(),
-    sb.from("payments").select("id, created_at, status, amount_cents, provider, method, orders!inner(reference)").order("created_at", { ascending: false }).limit(24),
-    sb.from("eligibility_checks").select("result, created_at").order("created_at", { ascending: false }).limit(1).maybeSingle(),
-    sb.from("consents").select("granted, created_at").eq("purpose", "marketing").order("created_at", { ascending: false }).limit(1).maybeSingle(),
-    sb.from("subscription_periods").select("period_start, refunded").gt("period_start", now.toISOString()).eq("refunded", false).limit(1),
+    sb.from("profiles").select("full_name, email, phone").eq("id", uid).maybeSingle(),
+    sb.from("subscriptions").select("id, status, current_period_start, current_period_end, cancel_at_period_end, renewal_mode").eq("user_id", uid).maybeSingle(),
+    sb.from("licenses").select("status, valid_until").eq("user_id", uid).maybeSingle(),
+    sb.from("payments").select("id, created_at, status, amount_cents, provider, method, orders!inner(reference, user_id)").eq("orders.user_id", uid).order("created_at", { ascending: false }).limit(24),
+    sb.from("eligibility_checks").select("result, created_at").eq("user_id", uid).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    sb.from("consents").select("granted, created_at").eq("user_id", uid).eq("purpose", "marketing").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    sb.from("subscription_periods").select("period_start, refunded, subscriptions!inner(user_id)").eq("subscriptions.user_id", uid).gt("period_start", now.toISOString()).eq("refunded", false).limit(1),
   ]);
   const payments = ((pays.data ?? []) as unknown as (CustomerView["payments"][number] & { orders: { reference: string } })[]).map((p) => ({ ...p, reference: p.orders.reference }));
   const s = sub.data as CustomerView["subscription"];

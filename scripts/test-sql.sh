@@ -30,4 +30,5 @@ done
 "${PSQL[@]}" -f "$ROOT/supabase/tests/20_rls.sql"
 "${PSQL[@]}" -f "$ROOT/supabase/tests/30_embudo_y_limites.sql"
 "${PSQL[@]}" -f "$ROOT/supabase/tests/40_zero_trust.sql"
+"${PSQL[@]}" -f "$ROOT/supabase/tests/50_acceso.sql"
 echo "✔ Todas las pruebas SQL pasaron"

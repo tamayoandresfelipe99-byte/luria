@@ -19,12 +19,17 @@ export async function POST(req: Request) {
   if (!auth.user) return json({ error: "No autenticado" }, 401);
   if (!(await rateLimitShared(`lic:${auth.user.id}`, 30, 60 * 60_000))) return json({ error: "Demasiadas solicitudes" }, 429);
   const db = supabaseAdmin();
-  const [{ data: lic }, { data: prof }] = await Promise.all([
+  const [{ data: lic }, { data: prof }, { data: grant }, { data: current }] = await Promise.all([
     db.from("licenses").select("id, status, valid_until").eq("user_id", auth.user.id).maybeSingle(),
     db.from("profiles").select("external_ref").eq("id", auth.user.id).single(),
+    db.from("access_grants").select("status").eq("user_id", auth.user.id).maybeSingle(),
+    db.rpc("fn_subscription_current", { p_user: auth.user.id }),
   ]);
   const l = lic as { id: string; status: string; valid_until: string | null } | null;
   if (!l || l.status !== "active") return json({ active: false }, 200);
+  // Acceso efectivo = licencia activa + acceso habilitado por un administrador + suscripción vigente.
+  // Revocar o suspender el acceso en el panel, o el vencimiento, cortan la emisión de tokens a la extensión.
+  if ((grant as { status: string } | null)?.status !== "habilitado" || current !== true) return json({ active: false }, 200);
   const issued = issueLicenseToken(cfg.licenseTokenPrivateKey, {
     externalUserRef: (prof as { external_ref: string }).external_ref,
     licenseId: l.id,
