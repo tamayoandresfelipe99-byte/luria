@@ -23,7 +23,7 @@ export const registerSchema = z
   })
   .strict()
   .superRefine((v, ctx) => {
-    const problem = passwordProblem(v.password, { email: v.email, name: v.name });
+    const problem = passwordProblem(v.password, { name: v.name });
     if (problem) ctx.addIssue({ code: "custom", path: ["password"], message: problem });
   });
 

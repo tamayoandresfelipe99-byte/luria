@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## v0.4.2 · 12-nov-2026
+
+### Cambiado
+- Política de contraseñas más flexible, por decisión del propietario: de 10 a 128 caracteres y **la única condición es que no sea el nombre ni el apellido** de la persona, aunque se le agreguen números o símbolos. Se retiran la lista de contraseñas comunes, el rechazo por repetición o por el correo y la consulta de filtraciones (Have I Been Pwned). El riesgo aceptado queda en `docs/16-auditoria-seguridad.md` §H-4.
+
 ## v0.4.1 · 12-nov-2026
 
 ### Cambiado

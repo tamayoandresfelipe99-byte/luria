@@ -1,7 +1,6 @@
-/** Controles de seguridad: política de contraseñas, filtraciones (k-anonimato) y redirecciones abiertas. */
+/** Controles de seguridad: política de contraseñas, redirecciones abiertas y webhooks falsos. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { passwordProblem, PASSWORD_MIN } from "../src/lib/security/password";
 import { safeInternalPath } from "../src/lib/security/redirect";
 import { registerSchema } from "../src/lib/validation";
@@ -11,41 +10,22 @@ test("SEC-PWD-01 — mínimo 10 caracteres y sin reglas de composición", () => 
   assert.ok(passwordProblem("corta123"));
   assert.ok(passwordProblem("abcdefghi")); // 9
   assert.equal(passwordProblem("cielo azul"), null, "10 caracteres sin números es válida");
-  assert.equal(passwordProblem("cielo verde sobre bogotá"), null, "una frase sin números ni mayúsculas es válida");
-  assert.equal(passwordProblem("x".repeat(128).replace(/x/g, (_, i) => "abcdefghij"[i % 10]!)), null);
+  for (const p of ["1234567890", "aaaaaaaaaa", "passwordpassword", "contraseña123"]) assert.equal(passwordProblem(p), null, `${p} se permite (decisión del propietario)`);
   assert.ok(passwordProblem("a".repeat(129)), "máximo 128");
 });
 
-test("SEC-PWD-02 — rechaza contraseñas triviales, repetitivas y con datos de la cuenta", () => {
-  for (const p of ["aaaaaaaaaaaaaaaa", "123456789012345", "passwordpassword1", "contraseña12345678", "qwertyqwertyqwerty", "lurialurialuria123"])
-    assert.ok(passwordProblem(p), `debe rechazar ${p}`);
-  assert.ok(passwordProblem("instructora.gomez 2026!", { email: "instructora.gomez@correo.co" }));
-  assert.ok(passwordProblem("MariaFernanda2026", { name: "María Fernanda" }));
+test("SEC-PWD-02 — no puede ser el nombre ni el apellido, aunque lleve números o símbolos", () => {
+  const name = "María Fernanda Gómez Paz";
+  for (const p of ["mariafernanda", "Gomez12345", "GÓMEZ GÓMEZ!", "fernanda2026", "maria gomez paz", "Paz123456789"])
+    assert.ok(passwordProblem(p, { name }), `debe rechazar ${p}`);
+  for (const p of ["maria es feliz", "gomezfamilia2026", "mi perro firulais"]) assert.equal(passwordProblem(p, { name }), null, `debe aceptar ${p}`);
 });
 
 test("SEC-PWD-03 — el registro aplica la política en el servidor", () => {
   const base = { name: "Ana Pérez", email: "ana@example.com", acceptTerms: "on", acceptPrivacy: "on" };
   assert.equal(registerSchema.safeParse({ ...base, password: "clave1234" }).success, false, "9 caracteres");
-  assert.equal(registerSchema.safeParse({ ...base, password: "clave12345x" }).success, true, "11 caracteres");
-  assert.equal(registerSchema.safeParse({ ...base, password: "passwordpassword123" }).success, false);
-  assert.equal(registerSchema.safeParse({ ...base, password: "una frase larga de prueba" }).success, true);
-});
-
-test("SEC-PWD-04 — la consulta de filtraciones solo envía 5 caracteres del SHA-1", async () => {
-  process.env.PASSWORD_BREACH_CHECK = "on";
-  const { isBreachedPassword } = await import("../src/lib/security/breach");
-  const pwd = "una frase larga de prueba";
-  const sha1 = createHash("sha1").update(pwd).digest("hex").toUpperCase();
-  const seen: string[] = [];
-  const fake = (async (url: string) => {
-    seen.push(url);
-    return new Response(`${sha1.slice(5)}:42\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:0\n`);
-  }) as unknown as typeof fetch;
-  assert.equal(await isBreachedPassword(pwd, fake), true);
-  assert.equal(seen[0], `https://api.pwnedpasswords.com/range/${sha1.slice(0, 5)}`);
-  assert.ok(!seen[0]!.includes(sha1.slice(5)) && !seen[0]!.includes(encodeURIComponent(pwd)));
-  const failing = (async () => { throw new Error("sin red"); }) as unknown as typeof fetch;
-  assert.equal(await isBreachedPassword(pwd, failing), false, "falla abierta si el servicio no responde");
+  assert.equal(registerSchema.safeParse({ ...base, password: "PEREZ123456" }).success, false, "su apellido");
+  assert.equal(registerSchema.safeParse({ ...base, password: "clave12345x" }).success, true);
 });
 
 test("SEC-REDIR-01 — solo destinos internos tras iniciar sesión o confirmar correo", () => {

@@ -9,10 +9,7 @@ import { appConfig } from "@/lib/services/factory";
 import { loginErrorMessage, recoverAccountMessage, registerDoneMessage } from "@/lib/services/auth-messages";
 import { NOTICE_VERSIONS } from "@/lib/content/site";
 import { passwordProblem } from "@/lib/security/password";
-import { isBreachedPassword } from "@/lib/security/breach";
 import { safeInternalPath } from "@/lib/security/redirect";
-
-const BREACHED_MESSAGE = "Esta contraseña aparece en filtraciones de datos conocidas. Elige otra.";
 
 export interface FormState {
   ok?: boolean;
@@ -32,7 +29,6 @@ export async function registerAction(_: FormState, fd: FormData): Promise<FormSt
   const parsed = registerSchema.safeParse(raw);
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors, message: "Revisa los campos marcados." };
   const v = parsed.data;
-  if (await isBreachedPassword(v.password)) return { fieldErrors: { password: [BREACHED_MESSAGE] }, message: "Revisa los campos marcados." };
   const cfg = appConfig();
   const sb = await supabaseServer();
   const { data, error } = await sb.auth.signUp({
@@ -94,10 +90,10 @@ export async function resetPasswordAction(_: FormState, fd: FormData): Promise<F
   const { data: auth } = await sb.auth.getUser();
   if (!auth.user) return { message: "El enlace venció o no es válido. Solicita uno nuevo." };
   if (!(await rateLimitShared(`reset:${auth.user.id}`, 5, 15 * 60_000))) return { message: "Demasiados intentos. Espera unos minutos." };
-  const problem = passwordProblem(pwd, { email: auth.user.email ?? undefined });
+  const { data: prof } = await sb.from("profiles").select("full_name").eq("id", auth.user.id).maybeSingle();
+  const problem = passwordProblem(pwd, { name: (prof as { full_name: string } | null)?.full_name ?? (auth.user.user_metadata?.full_name as string | undefined) });
   if (problem) return { message: problem };
   if (pwd !== fd.get("confirm")) return { message: "Las contraseñas no coinciden." };
-  if (await isBreachedPassword(pwd)) return { message: BREACHED_MESSAGE };
   const { error } = await sb.auth.updateUser({ password: pwd });
   if (error) return { message: "No pudimos cambiar la contraseña. Si el enlace venció, solicita uno nuevo." };
   // Cierra las demás sesiones abiertas: si alguien más tenía acceso, lo pierde al cambiar la contraseña.

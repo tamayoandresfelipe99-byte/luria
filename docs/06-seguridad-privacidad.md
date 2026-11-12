@@ -6,7 +6,7 @@
 | Secretos en servidor | Solo `NEXT_PUBLIC_*` llega al navegador. `server-only` en los módulos sensibles. La prueba **A19** analiza los componentes cliente en busca de secretos o importaciones de servidor |
 | Validación de entradas | zod `.strict()` en cada API y acción |
 | Sesiones | Supabase Auth con cookies `HttpOnly`, `Secure` y `SameSite=Lax` (`src/lib/supabase/cookie-options.ts`); `getUser()` valida contra Auth (no se confía en la cookie sola); refresco en `proxy.ts`; al cambiar la contraseña se cierran las demás sesiones |
-| Autenticación | Contraseña de 10 a 128 caracteres, sin reglas de composición, con rechazo de contraseñas triviales o con datos de la cuenta y consulta de filtraciones con k-anonimato (`src/lib/security/password.ts`, `breach.ts`); verificación de correo; recuperación con enlace de duración limitada (3600 s); mensajes neutrales (A16) |
+| Autenticación | Contraseña de 10 a 128 caracteres, sin reglas de composición; la única condición es que no sea el nombre ni el apellido (`src/lib/security/password.ts`); verificación de correo; recuperación con enlace de duración limitada (3600 s); mensajes neutrales (A16) |
 | Autorización por rol | `staff_roles` + `has_role()`; verificación en el layout de `/admin`, en cada API y en RLS |
 | Mínimo privilegio | El rol comercial no ve eventos técnicos, auditoría, licencias ni soporte |
 | CSRF | Verificación de `Origin` en APIs que cambian estado; cookies SameSite=Lax; las server actions de Next.js validan el origen |
