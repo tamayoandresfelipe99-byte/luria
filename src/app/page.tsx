@@ -4,26 +4,13 @@ import { FAQS } from "@/lib/content/faqs";
 import { FeatureCard } from "@/components/FeatureCard";
 import { DesktopNotice, IndependenceNotice } from "@/components/Notices";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { Hero } from "@/components/Hero";
 import { formatCop, PRODUCT } from "@/lib/domain/money";
 
 export default function Home() {
   return (
     <>
-      <section className="hero">
-        <div className="container">
-          <span className="eyebrow">Herramienta de apoyo para instructores en ZAJUNA</span>
-          <h1>Menos tiempo en tareas operativas, más tiempo para acompañar la formación.</h1>
-          <p className="lead">
-            LURIA es una extensión de Google Chrome que centraliza procesos académicos y administrativos de tus fichas virtuales:
-            revisión de entregas, evidencias, fechas, juicios y reenvíos.
-          </p>
-          <div className="hero-actions">
-            <Link href="/compatibilidad" className="btn btn-accent">Verificar compatibilidad</Link>
-            <Link href="/funciones" className="btn btn-ghost">Ver las seis funciones</Link>
-          </div>
-          <p className="small muted" style={{ marginTop: 16 }}>Suscripción individual de {formatCop(PRODUCT.priceCop)} al mes · Sin pruebas gratuitas · Requiere Chrome en computador</p>
-        </div>
-      </section>
+      <Hero />
 
       <section className="section" aria-labelledby="beneficios">
         <div className="container">

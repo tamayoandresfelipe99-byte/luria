@@ -1,5 +1,13 @@
 # Registro de cambios
 
+## v0.3.0 · 12-nov-2026
+
+### Cambiado (solo visual)
+- Nuevo hero de la página principal (`src/components/Hero.tsx`): dos columnas en escritorio y tablet, una en celular. Botón «Suscribirme por $40.000/mes» hacia `/precio`, «Explorar funciones» hacia `#funciones`, enlace a compatibilidad y declaración breve de independencia. A la derecha, un panel con las seis funciones (nombres y resúmenes de `src/lib/content/features.ts`), marcado como ilustración y no como captura de la extensión.
+- Paleta verde propia en toda la página (`globals.css`): verde principal `#39A900`, verde oscuro `#237500`, verde claro `#F1F9EB`, bordes `#DCEBD5`, texto `#17251C` y `#526456`. El texto sobre `#39A900` es oscuro porque el blanco no alcanza el contraste AA (≈ 3:1).
+- Animaciones de entrada y flotación sutil en el hero, anuladas con `prefers-reduced-motion`.
+- Sin cambios en rutas, autenticación, pagos, licencias, base de datos ni contenidos de otras secciones.
+
 ## v0.2.0 · 11-nov-2026
 
 ### Corregido
